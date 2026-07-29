@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>여름방학 한글 교실</title>
+<!-- 아이패드: 홈 화면에 추가하면 앱처럼 전체화면으로 열립니다 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="한글 교실">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23FF8A3D'/%3E%3Ctext x='90' y='122' font-size='96' text-anchor='middle' fill='white' font-family='sans-serif'%3E%EA%B0%80%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF4FB; --card:#FFFFFF; --ink:#1F3A5F; --sub:#6B7C93;
+    --accent:#FF8A3D; --accent-dark:#E9731F; --mint:#2FB894; --line:#D8E2EF;
+    --guide:#DCE5F0; --star:#FFC53D; --wrong:#E45B5B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  html,body{margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Gowun Dodum',sans-serif; min-height:100vh;}
+  h1,h2,h3,.jua{font-family:'Jua',sans-serif; font-weight:400;}
+  button{font-family:inherit; border:none; cursor:pointer;}
+  .wrap{max-width:900px; margin:0 auto; padding:20px 16px 60px;}
+
+  /* 홈 */
+  .home-head{text-align:center; margin:12px 0 22px;}
+  .home-head h1{font-size:34px; margin:0;}
+  .home-head p{color:var(--sub); margin:6px 0 0; font-size:16px;}
+  .day-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px;}
+  .day-card{background:var(--card); border:2px solid var(--line); border-radius:20px; padding:18px 16px; text-align:left; position:relative; transition:transform .1s;}
+  .day-card:active{transform:scale(.97);}
+  .day-card .dnum{display:inline-block; background:var(--ink); color:#fff; border-radius:10px; padding:3px 10px; font-size:14px; font-family:'Jua';}
+  .day-card h3{margin:10px 0 4px; font-size:21px;}
+  .day-card p{margin:0; color:var(--sub); font-size:14px;}
+  .day-card .meta{margin-top:8px; font-size:13px; color:var(--sub);}
+  .stamp{position:absolute; top:10px; right:10px; width:58px; height:58px; border-radius:50%;
+    border:3px solid var(--wrong); color:var(--wrong); display:flex; align-items:center; justify-content:center;
+    font-family:'Jua'; font-size:13px; transform:rotate(-14deg); background:rgba(255,255,255,.7);
+    line-height:1.1; text-align:center;}
+  .teacher-link{display:block; margin:26px auto 0; background:none; color:var(--sub); font-size:14px; text-decoration:underline;}
+
+  /* 공통 */
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .back-btn{background:var(--card); border:2px solid var(--line); border-radius:14px; padding:8px 14px; font-size:16px; color:var(--ink);}
+  .topbar h2{margin:0; font-size:22px; flex:1;}
+  .steps{display:flex; gap:5px; margin-bottom:16px;}
+  .step-dot{flex:1; height:9px; border-radius:6px; background:var(--line);}
+  .step-dot.on{background:var(--accent);}
+  .panel{background:var(--card); border:2px solid var(--line); border-radius:22px; padding:22px 20px;}
+  .panel h3{margin:0 0 4px; font-size:24px;}
+  .panel .hint{color:var(--sub); font-size:15px; margin:0 0 16px; line-height:1.6;}
+  .btn{background:var(--accent); color:#fff; border-radius:16px; padding:14px 26px; font-size:20px; font-family:'Jua'; box-shadow:0 3px 0 var(--accent-dark);}
+  .btn:active{transform:translateY(2px); box-shadow:none;}
+  .btn.ghost{background:#F1F5FA; color:var(--ink); box-shadow:0 3px 0 var(--line);}
+  .btn.mint{background:var(--mint); box-shadow:0 3px 0 #219478;}
+  .btn.sm{font-size:16px; padding:10px 18px;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center;}
+  .chip{border-radius:999px; padding:8px 16px; font-size:15px; background:#F1F5FA; border:2px solid var(--line); color:var(--ink);}
+  .chip.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .toggle-row{display:flex; gap:8px; align-items:center; margin:8px 0 16px; flex-wrap:wrap;}
+
+  /* 낱말 카드 */
+  .word-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .wcard{background:#F8FAFD; border:2px solid var(--line); border-radius:18px; padding:22px 10px; font-family:'Jua'; font-size:26px; color:var(--ink);}
+  .wcard.read{background:#E9F7F2; border-color:var(--mint);}
+  .wcard:active{transform:scale(.96);}
+
+  /* 읽기 */
+  .sentence{font-size:26px; line-height:1.95; padding:8px 12px; border-radius:14px;}
+  .sentence.active{background:#FFF3E4;}
+  .sentence .num{color:var(--sub); font-size:16px; margin-right:8px;}
+  .sentence .slash{color:var(--accent); font-weight:bold; margin:0 3px;}
+  .listen-btn{background:#F1F5FA; border:2px solid var(--line); border-radius:12px; padding:4px 12px; font-size:16px; margin-left:8px; vertical-align:middle; color:var(--ink);}
+
+  /* 타이머 */
+  .timer{font-family:'Jua'; font-size:54px; text-align:center; margin:8px 0;}
+  .round-row{display:flex; justify-content:center; gap:10px; margin-bottom:10px;}
+  .round-pill{padding:8px 16px; border-radius:999px; background:#F1F5FA; border:2px solid var(--line); font-size:15px; font-family:'Jua';}
+  .round-pill.now{border-color:var(--accent); background:#FFF3E4;}
+  .round-pill.done{background:var(--mint); color:#fff; border-color:var(--mint);}
+  .counter{display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 2px;}
+  .counter button{width:56px; height:56px; border-radius:50%; font-size:28px; background:#F1F5FA; border:2px solid var(--line); color:var(--ink);}
+  .counter .cnum{font-family:'Jua'; font-size:34px; min-width:60px; text-align:center;}
+  .counter-label{text-align:center; color:var(--sub); font-size:15px;}
+
+  /* 퀴즈 */
+  .quiz-q{font-family:'Jua'; font-size:23px; margin:0 0 12px;}
+  .quiz-opts{display:grid; gap:10px;}
+  .opt{text-align:left; background:#F8FAFD; border:2px solid var(--line); border-radius:16px; padding:16px 18px; font-size:20px; color:var(--ink);}
+  .opt.correct{background:#E9F7F2; border-color:var(--mint);}
+  .opt.wrong{background:#FDECEC; border-color:var(--wrong);}
+  .quiz-feedback{font-family:'Jua'; font-size:22px; margin-top:14px; min-height:30px;}
+  .quiz-progress{color:var(--sub); font-size:15px; margin-bottom:6px;}
+
+  /* 쓰기 */
+  .write-title{text-align:center; font-family:'Jua'; font-size:25px; margin-bottom:10px; line-height:1.5;}
+  .canvas-box{border:2px dashed var(--line); border-radius:16px; overflow:hidden; background:#fff; touch-action:none;}
+  canvas{display:block; width:100%;}
+  .word-nav{display:flex; justify-content:center; gap:8px; margin:0 0 12px; flex-wrap:wrap;}
+  .word-pill{padding:6px 13px; border-radius:999px; background:#F1F5FA; border:2px solid var(--line); font-size:16px; color:var(--ink);}
+  .word-pill.done{background:var(--mint); color:#fff; border-color:var(--mint);}
+  .word-pill.now{border-color:var(--accent); background:#FFF3E4;}
+  .answer-box{margin-top:12px; text-align:center; font-family:'Jua'; font-size:26px; color:var(--mint); min-height:34px;}
+
+  /* 완료 */
+  .finish{text-align:center; padding:26px 0;}
+  .big-stamp{width:150px; height:150px; margin:0 auto 16px; border-radius:50%; border:6px solid var(--wrong);
+    color:var(--wrong); display:flex; align-items:center; justify-content:center; font-family:'Jua'; font-size:26px;
+    transform:rotate(-12deg); animation:stampIn .5s cubic-bezier(.2,1.6,.4,1);}
+  @keyframes stampIn{from{transform:scale(2.4) rotate(-12deg); opacity:0;} to{transform:scale(1) rotate(-12deg); opacity:1;}}
+  .stars{font-size:40px; letter-spacing:6px; margin:6px 0 14px; color:var(--star);}
+  .result-list{display:inline-block; text-align:left; font-size:17px; line-height:2; color:var(--sub);}
+
+  /* 교사 기록 */
+  table{width:100%; border-collapse:collapse; font-size:15px;}
+  th,td{padding:10px 6px; border-bottom:1px solid var(--line); text-align:center;}
+  th{color:var(--sub); font-weight:normal;}
+  .notice{background:#FFF7E8; border:2px solid #F5DFAE; color:#8A6D1E; border-radius:14px; padding:12px 14px; font-size:14px; margin-bottom:14px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =====================================================
+   저장: 이 태블릿 크롬의 localStorage만 사용
+===================================================== */
+const STORAGE_KEY = "hangul-summer-records";
+
+/* =====================================================
+   7일 학습 자료  (하루 약 2시간 · 8단계)
+   passage 문장의 / 는 끊어 읽기 표시 위치
+===================================================== */
+const DAYS = [
+{
+  title:"여름 놀이터", theme:"짧은 문장 읽기 · 받침 익히기",
+  words:["놀이터","모자","미끄럼틀","그네","바람","친구","하늘","얼굴","시원한","신나요"],
+  passage:[
+    "오늘은 / 해가 쨍쨍 / 빛나는 날이에요.",
+    "나는 모자를 쓰고 / 놀이터에 갔어요.",
+    "놀이터에는 / 친구들이 많았어요.",
+    "나는 미끄럼틀에 / 올라갔어요.",
+    "씽 하고 / 아래로 내려왔어요.",
+    "다음에는 그네를 / 탔어요.",
+    "발을 힘차게 / 굴렀어요.",
+    "그네가 하늘까지 / 올라가는 것 같았어요.",
+    "시원한 바람이 / 얼굴을 스쳤어요.",
+    "나는 정말 / 신이 났어요."
+  ],
+  quiz:[
+    {q:"나는 어디에 갔나요?", opts:["놀이터","도서관","병원"], a:0},
+    {q:"무엇을 타고 씽 하고 내려왔나요?", opts:["자전거","미끄럼틀","버스"], a:1},
+    {q:"그네를 탈 때 무엇을 힘차게 굴렀나요?", opts:["손","머리","발"], a:2},
+    {q:"오늘 날씨는 어땠나요?", opts:["해가 쨍쨍","비가 주룩주룩","눈이 펑펑"], a:0}
+  ],
+  dictation:["놀이터","미끄럼틀","시원한 바람","나는 그네를 탔어요.","해가 쨍쨍 빛나요."],
+  copy:"나는 놀이터에서 그네를 탔어요.",
+  free:"오늘 내가 하고 싶은 놀이는 무엇인가요? 한 문장으로 써 보세요."
+},
+{
+  title:"수박 먹는 날", theme:"받침 낱말 다지기",
+  words:["수박","냉장고","줄무늬","속살","조각","달콤한","초록색","여름","더운","씨앗"],
+  passage:[
+    "오늘은 아주 / 더운 날이에요.",
+    "아빠가 냉장고에서 / 큰 수박을 꺼냈어요.",
+    "수박에는 초록색 줄무늬가 / 있었어요.",
+    "아빠가 칼로 / 반을 잘랐어요.",
+    "쩍 하고 / 소리가 났어요.",
+    "안에는 빨간 속살이 / 가득했어요.",
+    "나는 한 조각을 / 들고 먹었어요.",
+    "달콤한 물이 / 턱까지 흘렀어요.",
+    "까만 씨앗은 / 퉤퉤 뱉었어요.",
+    "여름에는 수박이 / 최고예요."
+  ],
+  quiz:[
+    {q:"아빠가 냉장고에서 꺼낸 것은?", opts:["사과","수박","우유"], a:1},
+    {q:"수박 겉에는 무슨 색 줄무늬가 있었나요?", opts:["초록색","노란색","보라색"], a:0},
+    {q:"수박 안의 속살은 무슨 색인가요?", opts:["흰색","파란색","빨간색"], a:2},
+    {q:"까만 씨앗은 어떻게 했나요?", opts:["삼켰다","퉤퉤 뱉었다","모았다"], a:1}
+  ],
+  dictation:["수박","냉장고","달콤한 물","아빠가 수박을 잘랐어요.","여름에는 수박이 최고예요."],
+  copy:"달콤한 수박을 맛있게 먹었어요.",
+  free:"내가 좋아하는 여름 음식은 무엇인가요? 한 문장으로 써 보세요."
+},
+{
+  title:"소나기", theme:"끊어 읽기 연습",
+  words:["소나기","구름","우산","처마","빗방울","무지개","하늘","갑자기","깜깜한","그쳤다"],
+  passage:[
+    "어제는 하늘이 / 참 맑았어요.",
+    "그런데 갑자기 / 구름이 몰려왔어요.",
+    "하늘이 금세 / 깜깜해졌어요.",
+    "후드득후드득 / 비가 쏟아졌어요.",
+    "나는 우산이 / 없었어요.",
+    "얼른 처마 밑으로 / 뛰어갔어요.",
+    "빗방울이 땅에서 / 통통 튀었어요.",
+    "십 분쯤 지나자 / 비가 그쳤어요.",
+    "하늘에 커다란 / 무지개가 떴어요.",
+    "나는 한참 동안 / 무지개를 보았어요."
+  ],
+  quiz:[
+    {q:"갑자기 하늘에 무엇이 몰려왔나요?", opts:["새","구름","비행기"], a:1},
+    {q:"나는 어디로 뛰어갔나요?", opts:["처마 밑","교실","놀이터"], a:0},
+    {q:"비가 그친 뒤 하늘에 뜬 것은?", opts:["달","별","무지개"], a:2},
+    {q:"나에게 없던 물건은 무엇인가요?", opts:["모자","우산","신발"], a:1}
+  ],
+  dictation:["소나기","무지개","깜깜한 하늘","비가 쏟아졌어요.","무지개가 떴어요."],
+  copy:"비가 그치고 무지개가 떴어요.",
+  free:"비가 오는 날 나는 무엇을 하나요? 한 문장으로 써 보세요."
+},
+{
+  title:"강아지와 산책", theme:"대화문 읽기",
+  words:["강아지","산책","꼬리","목줄","공원","나무","냄새","두 바퀴","살랑살랑","벌컥벌컥"],
+  passage:[
+    "우리 집에는 / 강아지가 살아요.",
+    "이름은 / 콩이예요.",
+    "\u201C콩아, 산책 가자!\u201D / 내가 말했어요.",
+    "콩이는 꼬리를 / 살랑살랑 흔들었어요.",
+    "\u201C멍멍!\u201D / 콩이가 신나게 짖었어요.",
+    "우리는 목줄을 하고 / 밖으로 나갔어요.",
+    "공원에는 나무가 / 아주 많았어요.",
+    "콩이는 냄새를 / 킁킁 맡았어요.",
+    "우리는 공원을 / 두 바퀴 돌았어요.",
+    "집에 오니 콩이가 / 물을 벌컥벌컥 마셨어요."
+  ],
+  quiz:[
+    {q:"강아지의 이름은 무엇인가요?", opts:["별이","콩이","해피"], a:1},
+    {q:"콩이는 무엇을 살랑살랑 흔들었나요?", opts:["꼬리","귀","앞발"], a:0},
+    {q:"우리는 공원을 몇 바퀴 돌았나요?", opts:["한 바퀴","세 바퀴","두 바퀴"], a:2},
+    {q:"집에 와서 콩이가 한 일은?", opts:["물을 마셨다","잠을 잤다","짖었다"], a:0}
+  ],
+  dictation:["강아지","산책","꼬리를 흔들어요","콩이가 멍멍 짖었어요.","공원을 두 바퀴 돌았어요."],
+  copy:"콩이와 함께 공원을 산책했어요.",
+  free:"내가 키우고 싶은 동물은 무엇인가요? 한 문장으로 써 보세요."
+},
+{
+  title:"매미", theme:"동시처럼 읽기",
+  words:["매미","나무","땅속","여름","소리","노래","살금살금","포르르","한 철","알리다"],
+  passage:[
+    "여름이 되면 / 매미가 울어요.",
+    "맴맴 맴맴 / 소리가 들려요.",
+    "매미는 나무에 / 딱 붙어 있어요.",
+    "나는 발끝을 들고 / 살금살금 다가갔어요.",
+    "매미가 나를 보고 / 포르르 날아갔어요.",
+    "매미는 땅속에서 / 아주 오래 살아요.",
+    "여러 해가 지나면 / 밖으로 나와요.",
+    "그리고 여름 한 철 / 노래를 불러요.",
+    "매미 소리는 / 여름을 알리는 소리예요.",
+    "나는 매미 노래를 / 오래오래 들었어요."
+  ],
+  quiz:[
+    {q:"매미는 어디에 붙어 있었나요?", opts:["땅","나무","지붕"], a:1},
+    {q:"매미가 내는 소리는?", opts:["맴맴","멍멍","야옹"], a:0},
+    {q:"매미는 어디에서 오래 사나요?", opts:["물속","하늘","땅속"], a:2},
+    {q:"매미가 노래하는 계절은?", opts:["여름","겨울","봄"], a:0}
+  ],
+  dictation:["매미","나무","여름 노래","매미가 맴맴 울어요.","매미가 포르르 날아갔어요."],
+  copy:"매미가 나무에서 노래를 불러요.",
+  free:"여름에 들리는 소리에는 무엇이 있나요? 한 문장으로 써 보세요."
+},
+{
+  title:"바닷가에서", theme:"긴 글 읽기",
+  words:["바닷가","파도","모래","조개껍데기","갈매기","노을","동생","물길","넓다","붉다"],
+  passage:[
+    "방학 때 우리 가족은 / 바닷가에 갔어요.",
+    "바다는 아주 넓고 / 파랬어요.",
+    "파도가 밀려와서 / 발을 간지럽혔어요.",
+    "발이 모래 속으로 / 쏙 들어갔어요.",
+    "나는 모래로 / 커다란 성을 만들었어요.",
+    "동생은 성 둘레에 / 물길을 팠어요.",
+    "우리는 조개껍데기도 / 가득 주웠어요.",
+    "갈매기가 머리 위로 / 날아갔어요.",
+    "저녁이 되자 노을이 / 바다를 붉게 물들였어요.",
+    "정말 잊지 못할 / 하루였어요."
+  ],
+  quiz:[
+    {q:"우리 가족이 놀러 간 곳은?", opts:["산","바닷가","놀이공원"], a:1},
+    {q:"파도가 무엇을 간지럽혔나요?", opts:["발","손","코"], a:0},
+    {q:"나는 모래로 무엇을 만들었나요?", opts:["배","집","성"], a:2},
+    {q:"저녁에 바다를 붉게 물들인 것은?", opts:["노을","구름","달"], a:0}
+  ],
+  dictation:["바닷가","조개껍데기","파란 바다","파도가 밀려와요.","모래로 성을 만들었어요."],
+  copy:"바닷가에서 커다란 모래성을 만들었어요.",
+  free:"내가 가 보고 싶은 곳은 어디인가요? 한 문장으로 써 보세요."
+},
+{
+  title:"나의 여름 방학", theme:"종합 · 내 이야기 쓰기",
+  words:["방학","아침","선생님","낱말","문장","자랑","또박또박","술술","일찍","늘었다"],
+  passage:[
+    "즐거운 여름 방학이 / 시작되었어요.",
+    "나는 아침마다 / 일찍 일어났어요.",
+    "학교에 와서 / 선생님과 공부했어요.",
+    "매일 글을 소리 내어 / 읽었어요.",
+    "어려운 낱말도 / 또박또박 썼어요.",
+    "처음에는 읽기가 / 조금 힘들었어요.",
+    "그런데 날마다 / 조금씩 빨라졌어요.",
+    "이제는 긴 문장도 / 술술 읽어요.",
+    "선생님이 많이 늘었다고 / 칭찬해 주셨어요.",
+    "나는 내가 / 정말 자랑스러워요."
+  ],
+  quiz:[
+    {q:"나는 아침마다 어떻게 했나요?", opts:["늦게 잤다","일찍 일어났다","놀았다"], a:1},
+    {q:"매일 무엇을 소리 내어 읽었나요?", opts:["글","노래","숫자"], a:0},
+    {q:"지금은 긴 문장을 어떻게 읽나요?", opts:["더듬더듬","못 읽는다","술술"], a:2},
+    {q:"나는 내가 어떻다고 했나요?", opts:["자랑스럽다","부끄럽다","속상하다"], a:0}
+  ],
+  dictation:["방학","문장","또박또박","나는 매일 책을 읽어요.","이제는 술술 읽어요."],
+  copy:"나는 내가 정말 자랑스러워요.",
+  free:"이번 방학에 내가 가장 잘한 일은 무엇인가요? 한 문장으로 써 보세요."
+}
+];
+
+const STEP_NAMES = ["낱말 익히기","듣고 따라 읽기","소리 내어 읽기","내용 확인 퀴즈","낱말 쓰기","받아쓰기","문장 따라 쓰기","내 문장 쓰기"];
+
+/* ===================== 상태 ===================== */
+const state = {
+  records:{}, screen:"home", day:0, step:0,
+  showSlash:true, rate:0.75,
+  wordsRead:[],
+  timerSec:0, timerId:null, running:false, stumbles:0,
+  round:0, roundTimes:[],
+  quizIdx:0, quizScore:0, quizAnswered:false,
+  wordIdx:0, wordsDone:[],
+  dictIdx:0, dictShown:false
+};
+
+/* ===================== TTS ===================== */
+/* iOS(아이패드)는 첫 화면 터치가 있어야 소리가 납니다. */
+let ttsUnlocked=false, koVoice=null;
+function pickVoice(){
+  if(!("speechSynthesis" in window)) return;
+  const vs=speechSynthesis.getVoices();
+  koVoice=vs.find(v=>v.lang&&v.lang.replace("_","-").startsWith("ko"))||null;
+}
+if("speechSynthesis" in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged=pickVoice;
+}
+function unlockTTS(){
+  if(ttsUnlocked||!("speechSynthesis" in window)) return;
+  const u=new SpeechSynthesisUtterance(" ");
+  u.volume=0; speechSynthesis.speak(u);
+  ttsUnlocked=true; pickVoice();
+}
+document.addEventListener("pointerdown", unlockTTS, {once:true});
+
+function plain(t){ return t.replace(/\//g," ").replace(/[\u201C\u201D"]/g,""); }
+function speak(text){
+  if(!("speechSynthesis" in window)) return;
+  unlockTTS();
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(plain(text));
+  u.lang="ko-KR"; u.rate=state.rate;
+  if(!koVoice) pickVoice();
+  if(koVoice) u.voice=koVoice;
+  speechSynthesis.speak(u);
+}
+function speakWord(i){ speak(DAYS[state.day].words[i]); markWordRead(i); }
+function speakSent(i){
+  document.querySelectorAll(".sentence").forEach(el=>el.classList.remove("active"));
+  const el=document.getElementById("sent"+i); if(el) el.classList.add("active");
+  speak(DAYS[state.day].passage[i]);
+}
+function speakDict(){ speak(DAYS[state.day].dictation[state.dictIdx]); }
+function speakCopy(){ speak(DAYS[state.day].copy); }
+function playAll(){
+  if(!("speechSynthesis" in window)) return;
+  unlockTTS();
+  const list=DAYS[state.day].passage;
+  speechSynthesis.cancel();
+  if(!koVoice) pickVoice();
+  list.forEach((s,i)=>{
+    const u=new SpeechSynthesisUtterance(plain(s));
+    u.lang="ko-KR"; u.rate=state.rate;
+    if(koVoice) u.voice=koVoice;
+    u.onstart=()=>{ document.querySelectorAll(".sentence").forEach(el=>el.classList.remove("active"));
+      const el=document.getElementById("sent"+i); if(el) el.classList.add("active"); };
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ===================== 저장 ===================== */
+function loadRecords(){
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) state.records=JSON.parse(raw); render(); }
+  catch(e){ console.error(e); }
+}
+function saveRecord(rec){
+  state.records[rec.day]=rec;
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records)); }catch(e){ console.error(e); }
+}
+function resetRecords(){
+  if(!confirm("모든 학습 기록을 정말 지울까요?")) return;
+  state.records={}; localStorage.removeItem(STORAGE_KEY); render();
+}
+
+/* ===================== 화면 ===================== */
+const app=document.getElementById("app");
+function render(){
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  if(state.screen==="home") renderHome();
+  else if(state.screen==="teacher") renderTeacher();
+  else renderDay();
+}
+function renderHome(){
+  const cards=DAYS.map((d,i)=>{
+    const done=state.records[i];
+    return `<button class="day-card" onclick="openDay(${i})">
+      <span class="dnum">${i+1}일째</span>
+      <h3>${d.title}</h3>
+      <p>${d.theme}</p>
+      <div class="meta">약 2시간 · 8단계</div>
+      ${done?'<div class="stamp">참<br>잘했어요</div>':""}
+    </button>`;
+  }).join("");
+  app.innerHTML=`
+    <div class="home-head">
+      <h1>🌻 여름방학 한글 교실</h1>
+      <p>하루에 한 칸씩, 도장을 모아 보자!</p>
+    </div>
+    <div class="day-grid">${cards}</div>
+    <button class="teacher-link" onclick="openTeacher()">📋 선생님 기록 보기</button>`;
+}
+function openDay(i){
+  state.screen="day"; state.day=i; state.step=0;
+  state.wordsRead=[]; state.timerSec=0; state.stumbles=0; state.running=false;
+  state.round=0; state.roundTimes=[];
+  state.quizIdx=0; state.quizScore=0; state.quizAnswered=false;
+  state.wordIdx=0; state.wordsDone=[]; state.dictIdx=0; state.dictShown=false;
+  clearInterval(state.timerId);
+  render();
+}
+function openTeacher(){ state.screen="teacher"; render(); }
+function goHome(){ clearInterval(state.timerId); state.screen="home"; render(); }
+function dayShell(inner){
+  const d=DAYS[state.day];
+  const dots=STEP_NAMES.map((_,s)=>`<div class="step-dot ${s<=state.step?"on":""}"></div>`).join("");
+  app.innerHTML=`
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">← 처음으로</button>
+      <h2>${state.day+1}일째 · ${d.title}</h2>
+    </div>
+    <div class="steps">${dots}</div>
+    <div class="panel">${inner}</div>`;
+}
+function nextStep(){ state.step++; render(); }
+function setRate(r){ state.rate=r; render(); }
+function toggleSlash(){ state.showSlash=!state.showSlash; render(); }
+function fmtTime(s){ return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
+
+function renderDay(){
+  const fns=[renderWordCards,renderListen,renderReadAloud,renderQuiz,renderWordWrite,renderDictation,renderCopyWrite,renderFreeWrite,renderFinish];
+  fns[state.step]();
+}
+
+/* ---------- ① 낱말 익히기 ---------- */
+function markWordRead(i){
+  if(!state.wordsRead.includes(i)){ state.wordsRead.push(i);
+    const el=document.getElementById("wc"+i); if(el) el.classList.add("read"); }
+}
+function renderWordCards(){
+  const d=DAYS[state.day];
+  const cards=d.words.map((w,i)=>
+    `<button class="wcard ${state.wordsRead.includes(i)?"read":""}" id="wc${i}" onclick="speakWord(${i})">${w}</button>`).join("");
+  dayShell(`
+    <h3>① 오늘의 낱말 익히기</h3>
+    <p class="hint">낱말을 누르면 소리가 나요. 듣고 따라 읽어 보세요. (${state.wordsRead.length}/${d.words.length})</p>
+    <div class="toggle-row">
+      <button class="chip ${state.rate===0.6?"on":""}" onclick="setRate(0.6)">🐢 아주 천천히</button>
+      <button class="chip ${state.rate===0.75?"on":""}" onclick="setRate(0.75)">🚶 천천히</button>
+      <button class="chip ${state.rate===1?"on":""}" onclick="setRate(1)">🏃 보통</button>
+    </div>
+    <div class="word-grid">${cards}</div>
+    <div class="btn-row"><button class="btn" onclick="nextStep()">다음으로 →</button></div>`);
+}
+
+/* ---------- ② 듣고 따라 읽기 ---------- */
+function renderListen(){
+  const d=DAYS[state.day];
+  const sents=d.passage.map((s,i)=>{
+    const html=state.showSlash ? s.replace(/\//g,'<span class="slash">∨</span>') : s.replace(/\s*\/\s*/g," ");
+    return `<div class="sentence" id="sent${i}"><span class="num">${i+1}</span>${html}
+      <button class="listen-btn" onclick="speakSent(${i})">🔊</button></div>`;
+  }).join("");
+  dayShell(`
+    <h3>② 듣고 따라 읽기</h3>
+    <p class="hint">🔊 를 누르고 선생님과 함께 한 문장씩 따라 읽어요. ∨ 표시에서 살짝 쉬어요.</p>
+    <div class="toggle-row">
+      <button class="chip ${state.showSlash?"on":""}" onclick="toggleSlash()">∨ 끊어 읽기 표시</button>
+      <button class="chip ${state.rate===0.6?"on":""}" onclick="setRate(0.6)">🐢</button>
+      <button class="chip ${state.rate===0.75?"on":""}" onclick="setRate(0.75)">🚶</button>
+      <button class="chip ${state.rate===1?"on":""}" onclick="setRate(1)">🏃</button>
+    </div>
+    ${sents}
+    <div class="btn-row">
+      <button class="btn ghost" onclick="playAll()">🔊 처음부터 듣기</button>
+      <button class="btn" onclick="nextStep()">다음으로 →</button>
+    </div>`);
+}
+
+/* ---------- ③ 소리 내어 읽기 (3회 반복) ---------- */
+function renderReadAloud(){
+  const d=DAYS[state.day];
+  const text=d.passage.map((s,i)=>`<div class="sentence"><span class="num">${i+1}</span>${s.replace(/\s*\/\s*/g," ")}</div>`).join("");
+  const rounds=[0,1,2].map(r=>{
+    let cls="round-pill";
+    if(state.roundTimes[r]!=null) cls+=" done";
+    else if(r===state.round) cls+=" now";
+    return `<span class="${cls}">${r+1}회 ${state.roundTimes[r]!=null?fmtTime(state.roundTimes[r]):""}</span>`;
+  }).join("");
+  dayShell(`
+    <h3>③ 소리 내어 읽기 <span style="font-size:17px;color:var(--sub)">— 3번 반복</span></h3>
+    <p class="hint">시작을 누르고 혼자 힘으로 끝까지 읽어요. 읽을수록 빨라지는 걸 확인해요.<br>
+    (선생님: 막히거나 더듬으면 ＋ 를 눌러 주세요)</p>
+    <div class="round-row">${rounds}</div>
+    <div class="timer" id="timer">${fmtTime(state.timerSec)}</div>
+    ${text}
+    <div class="counter">
+      <button onclick="bumpStumble(-1)">−</button>
+      <div class="cnum" id="stumble">${state.stumbles}</div>
+      <button onclick="bumpStumble(1)">＋</button>
+    </div>
+    <div class="counter-label">더듬은 횟수 (선생님용)</div>
+    <div class="btn-row">
+      <button class="btn ${state.running?"ghost":""}" id="timerBtn" onclick="toggleTimer()">${state.running?"⏸ 멈추기":"▶ 시작!"}</button>
+      <button class="btn mint" onclick="finishRound()">${state.round<2?(state.round+1)+"회 끝! →":"다 읽었어요 →"}</button>
+    </div>`);
+}
+function toggleTimer(){
+  if(state.running){ clearInterval(state.timerId); state.running=false; }
+  else{
+    state.running=true;
+    state.timerId=setInterval(()=>{ state.timerSec++;
+      const el=document.getElementById("timer"); if(el) el.textContent=fmtTime(state.timerSec); },1000);
+  }
+  const b=document.getElementById("timerBtn");
+  if(b){ b.textContent=state.running?"⏸ 멈추기":"▶ 시작!"; b.classList.toggle("ghost",state.running); }
+}
+function bumpStumble(n){
+  state.stumbles=Math.max(0,state.stumbles+n);
+  const el=document.getElementById("stumble"); if(el) el.textContent=state.stumbles;
+}
+function finishRound(){
+  clearInterval(state.timerId); state.running=false;
+  state.roundTimes[state.round]=state.timerSec;
+  if(state.round<2){ state.round++; state.timerSec=0; render(); }
+  else nextStep();
+}
+
+/* ---------- ④ 내용 확인 퀴즈 ---------- */
+function renderQuiz(){
+  const d=DAYS[state.day], q=d.quiz[state.quizIdx];
+  const opts=q.opts.map((o,i)=>`<button class="opt" id="opt${i}" onclick="answerQuiz(${i})">${o}</button>`).join("");
+  dayShell(`
+    <h3>④ 내용 확인 퀴즈</h3>
+    <p class="hint">글을 떠올리며 답을 골라 보세요. 헷갈리면 앞으로 돌아가 다시 읽어도 좋아요.</p>
+    <div class="quiz-progress">${state.quizIdx+1} / ${d.quiz.length} 문제 · 맞힌 개수 ${state.quizScore}개</div>
+    <p class="quiz-q">${q.q}</p>
+    <div class="quiz-opts">${opts}</div>
+    <div class="quiz-feedback" id="qfb"></div>
+    <div class="btn-row" id="qnext"></div>`);
+}
+function answerQuiz(i){
+  if(state.quizAnswered) return;
+  state.quizAnswered=true;
+  const d=DAYS[state.day], q=d.quiz[state.quizIdx];
+  document.getElementById("opt"+q.a).classList.add("correct");
+  const fb=document.getElementById("qfb");
+  if(i===q.a){ state.quizScore++; fb.textContent="⭕ 정답이에요! 잘했어요."; fb.style.color="var(--mint)"; }
+  else{ document.getElementById("opt"+i).classList.add("wrong"); fb.textContent="❌ 초록색이 정답이에요. 다시 읽어 볼까요?"; fb.style.color="var(--wrong)"; }
+  const last=state.quizIdx===d.quiz.length-1;
+  document.getElementById("qnext").innerHTML=
+    `<button class="btn" onclick="nextQuiz()">${last?"퀴즈 끝! →":"다음 문제 →"}</button>`;
+}
+function nextQuiz(){
+  const d=DAYS[state.day];
+  state.quizAnswered=false;
+  if(state.quizIdx<d.quiz.length-1){ state.quizIdx++; render(); }
+  else nextStep();
+}
+
+/* ---------- 캔버스 원고지 ---------- */
+let ctx=null, drawing=false, curGuide="";
+function layout(text,w){
+  const MIN=62, MAX=104, pad=24;
+  const maxPerRow=Math.max(1,Math.floor((w-pad*2)/MIN));
+  const words=text.split(" ");
+  const lines=[]; let cur="";
+  words.forEach(wd=>{
+    const test = cur ? cur+" "+wd : wd;
+    if(test.length>maxPerRow && cur){ lines.push(cur); cur=wd; }
+    else cur=test;
+  });
+  if(cur) lines.push(cur);
+  const longest=Math.max(...lines.map(l=>l.length));
+  const cell=Math.min(MAX,(w-pad*2)/longest);
+  return {lines, cell, height: Math.round(lines.length*cell + (lines.length-1)*18 + 60)};
+}
+function drawGuide(text,w,h){
+  const L=layout(text,w);
+  ctx.clearRect(0,0,w,h);
+  const startX=(w-L.cell*Math.max(...L.lines.map(l=>l.length)))/2;
+  let y=(h-(L.lines.length*L.cell+(L.lines.length-1)*18))/2;
+  L.lines.forEach(line=>{
+    let x=startX;
+    line.split("").forEach(ch=>{
+      ctx.strokeStyle="#D8E2EF"; ctx.lineWidth=2;
+      ctx.strokeRect(x,y,L.cell,L.cell);          // 띄어쓰기도 한 칸을 차지 (원고지 방식)
+      if(ch!==" "){
+        ctx.setLineDash([6,6]);
+        ctx.beginPath(); ctx.moveTo(x,y+L.cell/2); ctx.lineTo(x+L.cell,y+L.cell/2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+L.cell/2,y); ctx.lineTo(x+L.cell/2,y+L.cell); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle="#DCE5F0";
+        ctx.font=`${L.cell*0.72}px 'Jua'`;
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(ch,x+L.cell/2,y+L.cell/2+3);
+      }
+      x+=L.cell;
+    });
+    y+=L.cell+18;
+  });
+  ctx.lineWidth=9; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#1F3A5F";
+}
+function setupPad(guideText, blankRows){
+  curGuide=guideText;
+  const canvas=document.getElementById("pad");
+  const w=canvas.parentElement.clientWidth;
+  const h = guideText ? layout(guideText,w).height : (blankRows||1)*130+40;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.height=h+"px";
+  ctx=canvas.getContext("2d"); ctx.scale(dpr,dpr);
+  if(guideText) drawGuide(guideText,w,h); else drawBlank(w,h,blankRows||1);
+  canvas.onpointerdown=e=>{ e.preventDefault(); drawing=true; const p=pt(canvas,e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
+  canvas.onpointermove=e=>{ if(!drawing) return; e.preventDefault(); const p=pt(canvas,e); ctx.lineTo(p.x,p.y); ctx.stroke(); };
+  canvas.onpointerup=()=>drawing=false;
+  canvas.onpointercancel=()=>drawing=false;
+  canvas.onpointerleave=()=>drawing=false;
+  canvas.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
+  canvas.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
+}
+function drawBlank(w,h,rows){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle="#D8E2EF"; ctx.lineWidth=2; ctx.setLineDash([8,8]);
+  for(let r=0;r<rows;r++){
+    const y=40+r*((h-60)/rows)+((h-60)/rows)*0.7;
+    ctx.beginPath(); ctx.moveTo(24,y); ctx.lineTo(w-24,y); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.lineWidth=9; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#1F3A5F";
+}
+function clearPad(){
+  const canvas=document.getElementById("pad");
+  const w=canvas.parentElement.clientWidth, h=parseInt(canvas.style.height);
+  if(curGuide) drawGuide(curGuide,w,h); else drawBlank(w,h,3);
+}
+function pt(canvas,e){ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+
+/* ---------- ⑤ 낱말 따라 쓰기 ---------- */
+function renderWordWrite(){
+  const d=DAYS[state.day];
+  const pills=d.words.map((w,i)=>{
+    let cls="word-pill";
+    if(state.wordsDone.includes(i)) cls+=" done";
+    else if(i===state.wordIdx) cls+=" now";
+    return `<span class="${cls}">${w}</span>`;
+  }).join("");
+  dayShell(`
+    <h3>⑤ 낱말 따라 쓰기 <span style="font-size:17px;color:var(--sub)">${state.wordIdx+1}/${d.words.length}</span></h3>
+    <p class="hint">흐린 글자를 손가락이나 펜으로 예쁘게 따라 써요.</p>
+    <div class="word-nav">${pills}</div>
+    <div class="write-title">${d.words[state.wordIdx]}
+      <button class="listen-btn" onclick="speakWord(${state.wordIdx})">🔊 듣기</button></div>
+    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
+      <button class="btn" onclick="nextWord()">${state.wordIdx<d.words.length-1?"다음 낱말 →":"다 썼어요 →"}</button>
+    </div>`);
+  setupPad(d.words[state.wordIdx]);
+}
+function nextWord(){
+  const d=DAYS[state.day];
+  if(!state.wordsDone.includes(state.wordIdx)) state.wordsDone.push(state.wordIdx);
+  if(state.wordIdx<d.words.length-1){ state.wordIdx++; render(); }
+  else nextStep();
+}
+
+/* ---------- ⑥ 받아쓰기 ---------- */
+function renderDictation(){
+  const d=DAYS[state.day];
+  dayShell(`
+    <h3>⑥ 받아쓰기 <span style="font-size:17px;color:var(--sub)">${state.dictIdx+1}/${d.dictation.length}</span></h3>
+    <p class="hint">🔊 를 눌러 잘 듣고, 아래 줄에 또박또박 쓰세요. 다 쓴 뒤에 정답을 확인해요.</p>
+    <div class="write-title"><button class="btn sm ghost" onclick="speakDict()">🔊 문제 듣기</button></div>
+    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    <div class="answer-box">${state.dictShown?d.dictation[state.dictIdx]:""}</div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
+      <button class="btn ghost" onclick="showDictAnswer()">👀 정답 확인</button>
+      <button class="btn" onclick="nextDict()">${state.dictIdx<d.dictation.length-1?"다음 문제 →":"받아쓰기 끝 →"}</button>
+    </div>`);
+  setupPad("", 2);
+}
+function showDictAnswer(){ state.dictShown=true; render(); }
+function nextDict(){
+  const d=DAYS[state.day];
+  state.dictShown=false;
+  if(state.dictIdx<d.dictation.length-1){ state.dictIdx++; render(); }
+  else nextStep();
+}
+
+/* ---------- ⑦ 문장 따라 쓰기 ---------- */
+function renderCopyWrite(){
+  const d=DAYS[state.day];
+  dayShell(`
+    <h3>⑦ 문장 따라 쓰기</h3>
+    <p class="hint">오늘의 문장을 소리 내어 읽으면서 또박또박 써요. 띄어쓰기 칸은 비워 두세요.</p>
+    <div class="write-title">${d.copy}
+      <button class="listen-btn" onclick="speakCopy()">🔊 듣기</button></div>
+    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
+      <button class="btn" onclick="nextStep()">다 썼어요 →</button>
+    </div>`);
+  setupPad(d.copy);
+}
+
+/* ---------- ⑧ 내 문장 쓰기 ---------- */
+function renderFreeWrite(){
+  const d=DAYS[state.day];
+  dayShell(`
+    <h3>⑧ 내 문장 쓰기</h3>
+    <p class="hint">${d.free}</p>
+    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
+      <button class="btn mint" onclick="completeDay()">다 했어요! →</button>
+    </div>`);
+  setupPad("", 3);
+}
+
+/* ---------- 완료 ---------- */
+function completeDay(){
+  const rec={ day:state.day, date:new Date().toISOString().slice(0,10),
+    roundTimes:state.roundTimes, stumbles:state.stumbles,
+    quizScore:state.quizScore, quizTotal:DAYS[state.day].quiz.length };
+  saveRecord(rec);
+  state.step=8; render();
+}
+function renderFinish(){
+  const t=state.roundTimes;
+  dayShell(`
+    <div class="finish">
+      <div class="big-stamp">참<br>잘했어요</div>
+      <div class="stars">★ ★ ★</div>
+      <h3 style="font-size:28px;">오늘도 끝까지 해냈다!</h3>
+      <div class="result-list">
+        📖 읽기 1회 ${t[0]!=null?fmtTime(t[0]):"-"} → 3회 ${t[2]!=null?fmtTime(t[2]):"-"}<br>
+        🗣 더듬은 횟수 ${state.stumbles}번<br>
+        ✅ 퀴즈 ${state.quizScore} / ${DAYS[state.day].quiz.length}개
+      </div>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn" onclick="goHome()">처음으로 가기</button>
+      </div>
+    </div>`);
+}
+
+/* ---------- 선생님 기록 ---------- */
+function renderTeacher(){
+  const rows=Object.values(state.records).sort((a,b)=>a.day-b.day).map(r=>{
+    const t=r.roundTimes||[];
+    return `<tr><td>${r.day+1}일</td><td>${DAYS[r.day].title}</td><td>${r.date}</td>
+      <td>${t[0]!=null?fmtTime(t[0]):"-"}</td><td>${t[1]!=null?fmtTime(t[1]):"-"}</td><td>${t[2]!=null?fmtTime(t[2]):"-"}</td>
+      <td>${r.stumbles}번</td><td>${r.quizScore}/${r.quizTotal||4}</td></tr>`;
+  }).join("");
+  app.innerHTML=`
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">← 처음으로</button>
+      <h2>📋 학습 기록</h2>
+    </div>
+    <div class="notice">이 태블릿의 크롬에만 저장돼요. 브라우저 데이터를 지우거나 다른 기기로 바꾸면 기록이 사라집니다.</div>
+    <div class="panel">
+      ${rows?`<table>
+        <tr><th>일차</th><th>제목</th><th>날짜</th><th>1회</th><th>2회</th><th>3회</th><th>더듬음</th><th>퀴즈</th></tr>
+        ${rows}</table>`:'<p class="hint">아직 기록이 없어요. 학습을 마치면 자동으로 기록됩니다.</p>'}
+      <p class="hint" style="margin-top:14px;">💡 같은 글을 3번 읽는 <b>반복 읽기</b>는 읽기 유창성 지도의 핵심이에요. 1회와 3회 시간 차이, 그리고 날마다 줄어드는 더듬음 횟수를 확인해 보세요.</p>
+      ${rows?'<button class="btn ghost sm" style="margin-top:10px;" onclick="resetRecords()">🗑 기록 초기화</button>':""}
+    </div>`;
+}
+
+render(); loadRecords();
+</script>
+</body>
+</html>
