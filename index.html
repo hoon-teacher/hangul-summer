@@ -175,6 +175,7 @@
   .period-badge.p1{background:#FF8A3D;} .period-badge.p2{background:#2FB894;} .period-badge.p3{background:#7C6BD6;}
   .cloze-sentence{font-family:'Jua'; font-size:26px; line-height:1.9; margin:6px 0 16px; text-align:center;}
   .blank{color:var(--accent); letter-spacing:-2px;}
+  .version{text-align:center; color:#B6C2D2; font-size:12px; margin-top:18px;}
 
   /* 캔버스 2겹 (안내선 + 글씨) */
   .canvas-box{position:relative;}
@@ -809,6 +810,7 @@ function derive(dayIdx, setIdx){
 
 
 /* ===================== 단계 정의 (3차시) ===================== */
+const APP_VERSION="3.1";
 const CYCLE=[
   {kind:"words",     label:"낱말 익히기"},
   {kind:"listen",    label:"글 듣고 따라 읽기"},
@@ -1019,7 +1021,8 @@ function renderHome(){
     </div>
     <div class="day-grid">${cards}</div>
     <button class="teacher-link" onclick="openVoice()">🔊 목소리 고르기</button>
-    <button class="teacher-link" onclick="openTeacher()">📋 선생님 기록 보기</button>`;
+    <button class="teacher-link" onclick="openTeacher()">📋 선생님 기록 보기</button>
+    <p class="version">버전 ${APP_VERSION}</p>`;
 }
 function openVoice(){ state.screen="voice"; render(); }
 function openDay(i){ state.screen="day"; state.day=i; resetDayState(); render(); }
