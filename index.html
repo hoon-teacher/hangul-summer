@@ -166,6 +166,57 @@
   .bar-time{font-family:'Jua'; font-size:18px; width:60px; text-align:right;}
   .result-msg{text-align:center; font-family:'Jua'; font-size:22px; color:var(--ink); margin:6px 0 4px; line-height:1.6;}
 </style>
+<style>
+  .day-card .meta{margin-top:6px;}
+  .step-dot.p1{--pc:#FF8A3D;} .step-dot.p2{--pc:#2FB894;} .step-dot.p3{--pc:#7C6BD6;}
+  .step-dot.on{background:color-mix(in srgb, var(--pc) 45%, white);}
+  .step-dot.now{background:var(--pc); box-shadow:0 0 0 3px color-mix(in srgb, var(--pc) 25%, transparent);}
+  .period-badge{font-family:'Jua'; font-size:14px; color:#fff; border-radius:8px; padding:3px 10px; margin-right:8px;}
+  .period-badge.p1{background:#FF8A3D;} .period-badge.p2{background:#2FB894;} .period-badge.p3{background:#7C6BD6;}
+  .cloze-sentence{font-family:'Jua'; font-size:26px; line-height:1.9; margin:6px 0 16px; text-align:center;}
+  .blank{color:var(--accent); letter-spacing:-2px;}
+
+  /* 캔버스 2겹 (안내선 + 글씨) */
+  .canvas-box{position:relative;}
+  .canvas-box canvas{display:block; width:100%; position:absolute; top:0; left:0;}
+  .canvas-box #guide{z-index:0;}
+  .canvas-box #pad{z-index:1; touch-action:none;}
+
+  /* 도구 */
+  .tool-bar{display:flex; gap:8px; justify-content:center; margin:0 0 12px; flex-wrap:wrap;}
+  .tool-btn{background:#F1F5FA; border:2px solid var(--line); border-radius:14px;
+    padding:10px 18px; font-size:17px; font-family:'Jua'; color:var(--ink);}
+  .tool-btn.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  /* 회차 피드백 */
+  .feedback{position:relative; text-align:center; padding:18px 10px 6px; border-radius:20px; margin-bottom:16px;}
+  .feedback.up{background:#E9F7F2;} .feedback.same{background:#F1F5FA;}
+  .feedback.down{background:#FFF3E4;} .feedback.first{background:#F1F5FA;}
+  .fb-icon{font-size:56px; line-height:1; animation:pop .5s cubic-bezier(.2,1.6,.4,1);}
+  .fb-time{font-family:'Jua'; font-size:44px; margin:4px 0 2px;}
+  .fb-headline{font-family:'Jua'; font-size:27px; margin:6px 0 4px;}
+  .feedback.up .fb-headline{color:var(--mint);}
+  .feedback.down .fb-headline{color:var(--accent-dark);}
+  .fb-sub{color:var(--sub); font-size:16px; margin:0 0 8px; line-height:1.6;}
+  @keyframes pop{from{transform:scale(.3); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .burst{position:absolute; inset:0; pointer-events:none; overflow:hidden;}
+  .burst span{position:absolute; top:34%; left:50%; font-size:26px; opacity:0;
+    animation:fly 1.1s ease-out forwards; animation-delay:calc(var(--i)*.08s);}
+  .burst span:nth-child(1){--dx:-140px; --dy:-60px;}
+  .burst span:nth-child(2){--dx:-70px;  --dy:-100px;}
+  .burst span:nth-child(3){--dx:0px;    --dy:-120px;}
+  .burst span:nth-child(4){--dx:70px;   --dy:-100px;}
+  .burst span:nth-child(5){--dx:140px;  --dy:-60px;}
+  @keyframes fly{
+    0%{opacity:0; transform:translate(0,0) scale(.4);}
+    25%{opacity:1;}
+    100%{opacity:0; transform:translate(var(--dx),var(--dy)) scale(1.2);}
+  }
+  .bar-fill.now{background:var(--ink);}
+  @media (prefers-reduced-motion: reduce){
+    .fb-icon, .burst span{animation:none;} .burst{display:none;}
+  }
+</style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
@@ -174,8 +225,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 /* =====================================================
-   ⚙️ 여기에 Firebase 프로젝트 값을 넣으세요.
-   비워 두면 이 태블릿에만 저장됩니다(localStorage).
+   Firebase 설정 (come-on 프로젝트)
 ===================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDbuQHBmsb75jW0pAW_KKgaCnKy1LKQ8C8",
@@ -187,25 +237,18 @@ const firebaseConfig = {
 };
 let db=null, cloudOK=false;
 try{
-  if(firebaseConfig.apiKey){
-    firebase.initializeApp(firebaseConfig);
-    db=firebase.firestore();
-    cloudOK=true;
-  }
+  if(firebaseConfig.apiKey){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); cloudOK=true; }
 }catch(e){ console.error("Firebase 초기화 실패", e); }
 
 const STORAGE_KEY = "hangul-summer-records";
 const NICK_KEY = "hangul-summer-nick";
 
-/* =====================================================
-   7일 학습 자료  (하루 약 2시간 · 8단계)
-   passage 문장의 / 는 끊어 읽기 표시 위치
-===================================================== */
+/* 7일 × 3차시 학습 자료 */
 const DAYS = [
 {
   title:"여름 놀이터", theme:"짧은 문장 읽기 · 받침 익히기",
-  words:["놀이터","모자","미끄럼틀","그네","바람","친구","하늘","얼굴","시원한","신나요"],
-  passage:[
+  wordsA:["놀이터","모자","미끄럼틀","그네","바람","친구","하늘","얼굴","시원한","신나요"],
+  passageA:{ title:"놀이터에 갔어요", sentences:[
     "오늘은 / 해가 쨍쨍 / 빛나는 날이에요.",
     "나는 모자를 쓰고 / 놀이터에 갔어요.",
     "놀이터에는 / 친구들이 많았어요.",
@@ -216,21 +259,49 @@ const DAYS = [
     "그네가 하늘까지 / 올라가는 것 같았어요.",
     "시원한 바람이 / 얼굴을 스쳤어요.",
     "나는 정말 / 신이 났어요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"나는 어디에 갔나요?", opts:["놀이터","도서관","병원"], a:0},
     {q:"무엇을 타고 씽 하고 내려왔나요?", opts:["자전거","미끄럼틀","버스"], a:1},
     {q:"그네를 탈 때 무엇을 힘차게 굴렀나요?", opts:["손","머리","발"], a:2},
-    {q:"오늘 날씨는 어땠나요?", opts:["해가 쨍쨍","비가 주룩주룩","눈이 펑펑"], a:0}
+    {q:"오늘 날씨는 어땠나요?", opts:["해가 쨍쨍","비가 주룩주룩","눈이 펑펑"], a:0},
+    {q:"나는 무엇을 쓰고 나갔나요?", opts:["장갑","모자","목도리"], a:1}
   ],
-  dictation:["놀이터","미끄럼틀","시원한 바람","나는 그네를 탔어요.","해가 쨍쨍 빛나요."],
-  copy:"나는 놀이터에서 그네를 탔어요.",
-  free:"오늘 내가 하고 싶은 놀이는 무엇인가요? 한 문장으로 써 보세요."
+  wordsB:["시소","정글짐","모래밭","물병","그늘","벤치","두꺼비집","힘껏","목마른","즐거워요"],
+  passageB:{ title:"그늘에서 쉬었어요", sentences:[
+    "한참 놀았더니 / 땀이 났어요.",
+    "친구와 나는 / 시소를 탔어요.",
+    "내가 내려가면 / 친구가 올라갔어요.",
+    "정글짐에도 / 힘껏 매달렸어요.",
+    "모래밭에서는 / 두꺼비집을 만들었어요.",
+    "너무 더워서 / 나무 그늘로 갔어요.",
+    "벤치에 앉아 / 잠시 쉬었어요.",
+    "목이 말라서 / 물병을 꺼냈어요.",
+    "시원한 물을 / 벌컥벌컥 마셨어요.",
+    "오늘 하루가 / 참 즐거웠어요."
+  ]},
+  quizB:[
+    {q:"한참 놀았더니 무엇이 났나요?", opts:["눈물","땀","코피"], a:1},
+    {q:"친구와 함께 탄 것은 무엇인가요?", opts:["시소","버스","기차"], a:0},
+    {q:"모래밭에서 무엇을 만들었나요?", opts:["눈사람","성","두꺼비집"], a:2},
+    {q:"더워서 어디로 갔나요?", opts:["교실","나무 그늘","집 안"], a:1},
+    {q:"물병에서 무엇을 마셨나요?", opts:["물","우유","주스"], a:0}
+  ],
+  dictation:["놀이터","미끄럼틀","그네","모래밭","시원한 바람","나무 그늘","땀이 났어요","나는 그네를 탔어요.","해가 쨍쨍 빛나요.","오늘 하루가 즐거웠어요."],
+  cloze:[
+    {s:"나는 ___에 갔어요.", opts:["놀이터","냉장고","바닷가"], a:0},
+    {s:"시원한 ___이 얼굴을 스쳤어요.", opts:["모래","물","바람"], a:2},
+    {s:"친구와 ___를 탔어요.", opts:["시소","버스","기차"], a:0},
+    {s:"나무 ___에서 쉬었어요.", opts:["위","그늘","속"], a:1},
+    {s:"목이 말라서 ___을 꺼냈어요.", opts:["가방","연필","물병"], a:2}
+  ],
+  copy:["나는 놀이터에서 그네를 탔어요.","시원한 바람이 얼굴을 스쳤어요.","친구와 함께 시소를 탔어요."],
+  free:["오늘 내가 하고 싶은 놀이는 무엇인가요? 한 문장으로 써 보세요.","놀이터에서 가장 재미있는 것은 무엇인가요? 한 문장으로 써 보세요."]
 },
 {
   title:"수박 먹는 날", theme:"받침 낱말 다지기",
-  words:["수박","냉장고","줄무늬","속살","조각","달콤한","초록색","여름","더운","씨앗"],
-  passage:[
+  wordsA:["수박","냉장고","줄무늬","속살","조각","달콤한","초록색","여름","더운","씨앗"],
+  passageA:{ title:"아빠가 수박을 잘랐어요", sentences:[
     "오늘은 아주 / 더운 날이에요.",
     "아빠가 냉장고에서 / 큰 수박을 꺼냈어요.",
     "수박에는 초록색 줄무늬가 / 있었어요.",
@@ -241,21 +312,49 @@ const DAYS = [
     "달콤한 물이 / 턱까지 흘렀어요.",
     "까만 씨앗은 / 퉤퉤 뱉었어요.",
     "여름에는 수박이 / 최고예요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"아빠가 냉장고에서 꺼낸 것은?", opts:["사과","수박","우유"], a:1},
     {q:"수박 겉에는 무슨 색 줄무늬가 있었나요?", opts:["초록색","노란색","보라색"], a:0},
     {q:"수박 안의 속살은 무슨 색인가요?", opts:["흰색","파란색","빨간색"], a:2},
-    {q:"까만 씨앗은 어떻게 했나요?", opts:["삼켰다","퉤퉤 뱉었다","모았다"], a:1}
+    {q:"까만 씨앗은 어떻게 했나요?", opts:["삼켰다","퉤퉤 뱉었다","모았다"], a:1},
+    {q:"수박을 자를 때 난 소리는?", opts:["쩍","쿵","탁"], a:0}
   ],
-  dictation:["수박","냉장고","달콤한 물","아빠가 수박을 잘랐어요.","여름에는 수박이 최고예요."],
-  copy:"달콤한 수박을 맛있게 먹었어요.",
-  free:"내가 좋아하는 여름 음식은 무엇인가요? 한 문장으로 써 보세요."
+  wordsB:["부엌","접시","포크","동생","할머니","가족","나누어","웃음","시원해요","고마워요"],
+  passageB:{ title:"가족과 나누어 먹었어요", sentences:[
+    "엄마가 부엌에서 / 접시를 가져왔어요.",
+    "수박을 예쁘게 / 담았어요.",
+    "동생은 포크를 들고 / 기다렸어요.",
+    "할머니께 / 먼저 드렸어요.",
+    "\u201C할머니, 드세요.\u201D / 내가 말했어요.",
+    "할머니가 / 활짝 웃으셨어요.",
+    "우리 가족은 / 둘러앉아 먹었어요.",
+    "수박은 나누어 먹으니 / 더 맛있었어요.",
+    "더위가 / 싹 물러갔어요.",
+    "오늘 저녁은 / 참 시원했어요."
+  ]},
+  quizB:[
+    {q:"엄마가 부엌에서 가져온 것은?", opts:["접시","우산","공책"], a:0},
+    {q:"동생이 들고 기다린 것은?", opts:["숟가락","포크","젓가락"], a:1},
+    {q:"수박을 누구에게 먼저 드렸나요?", opts:["동생","아빠","할머니"], a:2},
+    {q:"할머니는 어떻게 하셨나요?", opts:["활짝 웃으셨다","화내셨다","주무셨다"], a:0},
+    {q:"수박을 어떻게 먹으니 더 맛있었나요?", opts:["혼자","나누어","빨리"], a:1}
+  ],
+  dictation:["수박","냉장고","줄무늬","접시","달콤한 물","까만 씨앗","가족과 함께","아빠가 수박을 잘랐어요.","여름에는 수박이 최고예요.","나누어 먹으니 더 맛있어요."],
+  cloze:[
+    {s:"아빠가 ___에서 수박을 꺼냈어요.", opts:["냉장고","놀이터","교실"], a:0},
+    {s:"수박 안에는 빨간 ___이 가득했어요.", opts:["씨앗","속살","줄무늬"], a:1},
+    {s:"까만 씨앗은 퉤퉤 ___어요.", opts:["삼켰","모았","뱉었"], a:2},
+    {s:"엄마가 ___를 가져왔어요.", opts:["접시","우산","가방"], a:0},
+    {s:"수박은 ___ 먹으니 더 맛있어요.", opts:["혼자","나누어","빨리"], a:1}
+  ],
+  copy:["달콤한 수박을 맛있게 먹었어요.","까만 씨앗을 퉤퉤 뱉었어요.","가족과 나누어 먹으니 더 맛있어요."],
+  free:["내가 좋아하는 여름 음식은 무엇인가요? 한 문장으로 써 보세요.","가족과 함께 먹고 싶은 음식은 무엇인가요? 한 문장으로 써 보세요."]
 },
 {
   title:"소나기", theme:"끊어 읽기 연습",
-  words:["소나기","구름","우산","처마","빗방울","무지개","하늘","갑자기","깜깜한","그쳤다"],
-  passage:[
+  wordsA:["소나기","구름","우산","처마","빗방울","무지개","갑자기","깜깜한","쏟아지다","그쳤다"],
+  passageA:{ title:"갑자기 비가 내렸어요", sentences:[
     "어제는 하늘이 / 참 맑았어요.",
     "그런데 갑자기 / 구름이 몰려왔어요.",
     "하늘이 금세 / 깜깜해졌어요.",
@@ -266,21 +365,49 @@ const DAYS = [
     "십 분쯤 지나자 / 비가 그쳤어요.",
     "하늘에 커다란 / 무지개가 떴어요.",
     "나는 한참 동안 / 무지개를 보았어요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"갑자기 하늘에 무엇이 몰려왔나요?", opts:["새","구름","비행기"], a:1},
     {q:"나는 어디로 뛰어갔나요?", opts:["처마 밑","교실","놀이터"], a:0},
     {q:"비가 그친 뒤 하늘에 뜬 것은?", opts:["달","별","무지개"], a:2},
-    {q:"나에게 없던 물건은 무엇인가요?", opts:["모자","우산","신발"], a:1}
+    {q:"나에게 없던 물건은 무엇인가요?", opts:["모자","우산","신발"], a:1},
+    {q:"빗방울은 땅에서 어떻게 했나요?", opts:["통통 튀었다","얼었다","사라졌다"], a:0}
   ],
-  dictation:["소나기","무지개","깜깜한 하늘","비가 쏟아졌어요.","무지개가 떴어요."],
-  copy:"비가 그치고 무지개가 떴어요.",
-  free:"비가 오는 날 나는 무엇을 하나요? 한 문장으로 써 보세요."
+  wordsB:["웅덩이","장화","개구리","젖은","마당","흙냄새","첨벙","반짝","깨끗해요","상쾌해요"],
+  passageB:{ title:"비 온 뒤 마당", sentences:[
+    "비가 그친 뒤 / 마당에 나갔어요.",
+    "여기저기 / 물웅덩이가 생겼어요.",
+    "나는 장화를 신고 / 첨벙 뛰었어요.",
+    "물이 사방으로 / 튀었어요.",
+    "젖은 나뭇잎이 / 반짝반짝 빛났어요.",
+    "흙냄새가 / 코끝에 닿았어요.",
+    "개구리 한 마리가 / 폴짝 뛰어갔어요.",
+    "공기가 아주 / 상쾌했어요.",
+    "세상이 모두 / 깨끗해진 것 같았어요.",
+    "나는 크게 / 숨을 들이마셨어요."
+  ]},
+  quizB:[
+    {q:"비가 그친 뒤 마당에 무엇이 생겼나요?", opts:["물웅덩이","눈사람","모래성"], a:0},
+    {q:"나는 무엇을 신고 뛰었나요?", opts:["운동화","장화","슬리퍼"], a:1},
+    {q:"폴짝 뛰어간 동물은?", opts:["강아지","고양이","개구리"], a:2},
+    {q:"젖은 나뭇잎은 어떻게 보였나요?", opts:["반짝반짝 빛났다","시들었다","까맣게 변했다"], a:0},
+    {q:"비 온 뒤 공기는 어땠나요?", opts:["답답했다","상쾌했다","뜨거웠다"], a:1}
+  ],
+  dictation:["소나기","무지개","빗방울","웅덩이","깜깜한 하늘","젖은 나뭇잎","흙냄새","비가 쏟아졌어요.","하늘에 무지개가 떴어요.","공기가 아주 상쾌했어요."],
+  cloze:[
+    {s:"갑자기 ___이 몰려왔어요.", opts:["구름","무지개","장화"], a:0},
+    {s:"나는 ___이 없어서 뛰어갔어요.", opts:["모자","우산","가방"], a:1},
+    {s:"비가 그치고 ___가 떴어요.", opts:["별","달","무지개"], a:2},
+    {s:"___를 신고 첨벙 뛰었어요.", opts:["장화","양말","슬리퍼"], a:0},
+    {s:"공기가 아주 ___어요.", opts:["답답했","상쾌했","뜨거웠"], a:1}
+  ],
+  copy:["비가 그치고 무지개가 떴어요.","빗방울이 통통 튀었어요.","장화를 신고 첨벙 뛰었어요."],
+  free:["비가 오는 날 나는 무엇을 하나요? 한 문장으로 써 보세요.","무지개를 보면 어떤 기분이 드나요? 한 문장으로 써 보세요."]
 },
 {
   title:"강아지와 산책", theme:"대화문 읽기",
-  words:["강아지","산책","꼬리","목줄","공원","나무","냄새","두 바퀴","살랑살랑","벌컥벌컥"],
-  passage:[
+  wordsA:["강아지","산책","꼬리","목줄","공원","냄새","살랑살랑","킁킁","두 바퀴","벌컥벌컥"],
+  passageA:{ title:"콩이와 공원에 갔어요", sentences:[
     "우리 집에는 / 강아지가 살아요.",
     "이름은 / 콩이예요.",
     "\u201C콩아, 산책 가자!\u201D / 내가 말했어요.",
@@ -291,21 +418,49 @@ const DAYS = [
     "콩이는 냄새를 / 킁킁 맡았어요.",
     "우리는 공원을 / 두 바퀴 돌았어요.",
     "집에 오니 콩이가 / 물을 벌컥벌컥 마셨어요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"강아지의 이름은 무엇인가요?", opts:["별이","콩이","해피"], a:1},
     {q:"콩이는 무엇을 살랑살랑 흔들었나요?", opts:["꼬리","귀","앞발"], a:0},
     {q:"우리는 공원을 몇 바퀴 돌았나요?", opts:["한 바퀴","세 바퀴","두 바퀴"], a:2},
-    {q:"집에 와서 콩이가 한 일은?", opts:["물을 마셨다","잠을 잤다","짖었다"], a:0}
+    {q:"집에 와서 콩이가 한 일은?", opts:["물을 마셨다","잠을 잤다","짖었다"], a:0},
+    {q:"콩이는 냄새를 어떻게 맡았나요?", opts:["쓱쓱","킁킁","쿨쿨"], a:1}
   ],
-  dictation:["강아지","산책","꼬리를 흔들어요","콩이가 멍멍 짖었어요.","공원을 두 바퀴 돌았어요."],
-  copy:"콩이와 함께 공원을 산책했어요.",
-  free:"내가 키우고 싶은 동물은 무엇인가요? 한 문장으로 써 보세요."
+  wordsB:["비둘기","할아버지","벤치","공놀이","기다려","간식","쓰다듬","착하다","앉아","돌아왔어요"],
+  passageB:{ title:"콩이는 참 착해요", sentences:[
+    "공원 벤치에 / 할아버지가 앉아 계셨어요.",
+    "콩이가 꼬리를 흔들며 / 다가갔어요.",
+    "할아버지가 콩이를 / 쓰다듬어 주셨어요.",
+    "\u201C참 착한 강아지구나.\u201D / 할아버지가 말씀하셨어요.",
+    "나는 콩이와 / 공놀이를 했어요.",
+    "\u201C콩아, 기다려!\u201D / 내가 공을 던졌어요.",
+    "콩이는 공을 물고 / 얼른 돌아왔어요.",
+    "비둘기들이 / 푸드덕 날아올랐어요.",
+    "나는 콩이에게 / 간식을 주었어요.",
+    "\u201C콩아, 앉아!\u201D / 콩이가 얌전히 앉았어요."
+  ]},
+  quizB:[
+    {q:"벤치에 앉아 계신 분은?", opts:["할아버지","선생님","아저씨"], a:0},
+    {q:"할아버지는 콩이를 어떻게 하셨나요?", opts:["혼내셨다","쓰다듬어 주셨다","안아 주셨다"], a:1},
+    {q:"내가 콩이와 한 놀이는?", opts:["숨바꼭질","줄넘기","공놀이"], a:2},
+    {q:"공을 던지자 콩이는 어떻게 했나요?", opts:["물고 돌아왔다","도망갔다","짖었다"], a:0},
+    {q:"푸드덕 날아오른 것은?", opts:["나비","비둘기","잠자리"], a:1}
+  ],
+  dictation:["강아지","산책","꼬리","공놀이","목줄을 했어요","냄새를 킁킁","착한 강아지","콩이가 멍멍 짖었어요.","공원을 두 바퀴 돌았어요.","콩이가 얌전히 앉았어요."],
+  cloze:[
+    {s:"콩이는 ___를 살랑살랑 흔들었어요.", opts:["꼬리","귀","발"], a:0},
+    {s:"우리는 ___을 하고 밖으로 나갔어요.", opts:["모자","목줄","가방"], a:1},
+    {s:"콩이는 냄새를 ___ 맡았어요.", opts:["쓱쓱","쿨쿨","킁킁"], a:2},
+    {s:"할아버지가 콩이를 ___ 주셨어요.", opts:["쓰다듬어","혼내","불러"], a:0},
+    {s:"콩이는 공을 물고 얼른 ___어요.", opts:["도망갔","돌아왔","숨었"], a:1}
+  ],
+  copy:["콩이와 함께 공원을 산책했어요.","콩이가 꼬리를 살랑살랑 흔들었어요.","콩이는 참 착한 강아지예요."],
+  free:["내가 키우고 싶은 동물은 무엇인가요? 한 문장으로 써 보세요.","동물과 놀 때 조심할 점은 무엇일까요? 한 문장으로 써 보세요."]
 },
 {
   title:"매미", theme:"동시처럼 읽기",
-  words:["매미","나무","땅속","여름","소리","노래","살금살금","포르르","한 철","알리다"],
-  passage:[
+  wordsA:["매미","나무","땅속","여름","노래","소리","살금살금","포르르","한 철","알리다"],
+  passageA:{ title:"매미가 울어요", sentences:[
     "여름이 되면 / 매미가 울어요.",
     "맴맴 맴맴 / 소리가 들려요.",
     "매미는 나무에 / 딱 붙어 있어요.",
@@ -316,21 +471,49 @@ const DAYS = [
     "그리고 여름 한 철 / 노래를 불러요.",
     "매미 소리는 / 여름을 알리는 소리예요.",
     "나는 매미 노래를 / 오래오래 들었어요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"매미는 어디에 붙어 있었나요?", opts:["땅","나무","지붕"], a:1},
     {q:"매미가 내는 소리는?", opts:["맴맴","멍멍","야옹"], a:0},
     {q:"매미는 어디에서 오래 사나요?", opts:["물속","하늘","땅속"], a:2},
-    {q:"매미가 노래하는 계절은?", opts:["여름","겨울","봄"], a:0}
+    {q:"매미가 노래하는 계절은?", opts:["여름","겨울","봄"], a:0},
+    {q:"나는 어떻게 다가갔나요?", opts:["뛰어서","살금살금","크게 소리치며"], a:1}
   ],
-  dictation:["매미","나무","여름 노래","매미가 맴맴 울어요.","매미가 포르르 날아갔어요."],
-  copy:"매미가 나무에서 노래를 불러요.",
-  free:"여름에 들리는 소리에는 무엇이 있나요? 한 문장으로 써 보세요."
+  wordsB:["허물","날개","껍질","잠자리","풀숲","곤충","투명한","붙잡다","신기해요","조심조심"],
+  passageB:{ title:"매미 허물을 찾았어요", sentences:[
+    "나무 아래 풀숲에서 / 매미 허물을 찾았어요.",
+    "껍질이 아주 / 가벼웠어요.",
+    "투명한 날개 자국도 / 남아 있었어요.",
+    "나는 조심조심 / 손에 올렸어요.",
+    "부서질까 봐 / 살살 만졌어요.",
+    "매미는 이 껍질을 벗고 / 어른이 돼요.",
+    "곤충은 정말 / 신기해요.",
+    "옆에는 잠자리도 / 날아다녔어요.",
+    "나는 허물을 / 다시 놓아 주었어요.",
+    "집으로 오는 길에도 / 매미가 울었어요."
+  ]},
+  quizB:[
+    {q:"풀숲에서 무엇을 찾았나요?", opts:["매미 허물","돌멩이","나뭇잎"], a:0},
+    {q:"허물의 무게는 어땠나요?", opts:["무거웠다","가벼웠다","축축했다"], a:1},
+    {q:"매미는 껍질을 벗고 무엇이 되나요?", opts:["애벌레","알","어른"], a:2},
+    {q:"옆에서 날아다닌 곤충은?", opts:["잠자리","나비","벌"], a:0},
+    {q:"나는 허물을 어떻게 했나요?", opts:["가져갔다","다시 놓아 주었다","버렸다"], a:1}
+  ],
+  dictation:["매미","허물","날개","풀숲","여름 노래","투명한 껍질","조심조심","매미가 맴맴 울어요.","매미가 포르르 날아갔어요.","곤충은 정말 신기해요."],
+  cloze:[
+    {s:"매미는 ___에 딱 붙어 있어요.", opts:["나무","지붕","땅"], a:0},
+    {s:"나는 발끝을 들고 ___ 다가갔어요.", opts:["뛰어서","살금살금","크게"], a:1},
+    {s:"매미는 ___에서 아주 오래 살아요.", opts:["물속","하늘","땅속"], a:2},
+    {s:"풀숲에서 매미 ___을 찾았어요.", opts:["허물","알","집"], a:0},
+    {s:"나는 허물을 다시 ___ 주었어요.", opts:["버려","놓아","숨겨"], a:1}
+  ],
+  copy:["매미가 나무에서 노래를 불러요.","매미가 포르르 날아갔어요.","곤충은 정말 신기해요."],
+  free:["여름에 들리는 소리에는 무엇이 있나요? 한 문장으로 써 보세요.","내가 좋아하는 곤충은 무엇인가요? 한 문장으로 써 보세요."]
 },
 {
   title:"바닷가에서", theme:"긴 글 읽기",
-  words:["바닷가","파도","모래","조개껍데기","갈매기","노을","동생","물길","넓다","붉다"],
-  passage:[
+  wordsA:["바닷가","파도","모래","조개껍데기","갈매기","노을","물길","동생","넓다","붉다"],
+  passageA:{ title:"바다에 놀러 갔어요", sentences:[
     "방학 때 우리 가족은 / 바닷가에 갔어요.",
     "바다는 아주 넓고 / 파랬어요.",
     "파도가 밀려와서 / 발을 간지럽혔어요.",
@@ -341,21 +524,49 @@ const DAYS = [
     "갈매기가 머리 위로 / 날아갔어요.",
     "저녁이 되자 노을이 / 바다를 붉게 물들였어요.",
     "정말 잊지 못할 / 하루였어요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"우리 가족이 놀러 간 곳은?", opts:["산","바닷가","놀이공원"], a:1},
     {q:"파도가 무엇을 간지럽혔나요?", opts:["발","손","코"], a:0},
     {q:"나는 모래로 무엇을 만들었나요?", opts:["배","집","성"], a:2},
-    {q:"저녁에 바다를 붉게 물들인 것은?", opts:["노을","구름","달"], a:0}
+    {q:"저녁에 바다를 붉게 물들인 것은?", opts:["노을","구름","달"], a:0},
+    {q:"동생이 성 둘레에 판 것은?", opts:["구멍","물길","우물"], a:1}
   ],
-  dictation:["바닷가","조개껍데기","파란 바다","파도가 밀려와요.","모래로 성을 만들었어요."],
-  copy:"바닷가에서 커다란 모래성을 만들었어요.",
-  free:"내가 가 보고 싶은 곳은 어디인가요? 한 문장으로 써 보세요."
+  wordsB:["튜브","구명조끼","소라","게","바닷물","짜다","헤엄","깊은","안전하게","약속"],
+  passageB:{ title:"안전하게 물놀이해요", sentences:[
+    "물에 들어가기 전에 / 준비 운동을 했어요.",
+    "나는 구명조끼를 / 단단히 입었어요.",
+    "튜브를 잡고 / 천천히 들어갔어요.",
+    "바닷물이 입에 들어와 / 아주 짰어요.",
+    "\u201C깊은 곳은 가지 마.\u201D / 아빠가 말씀하셨어요.",
+    "나는 얕은 곳에서만 / 헤엄쳤어요.",
+    "발밑으로 작은 게가 / 지나갔어요.",
+    "동생은 소라를 주워 / 귀에 대 보았어요.",
+    "\u201C바다 소리가 들려!\u201D / 동생이 외쳤어요.",
+    "우리는 안전하게 놀기로 / 약속했어요."
+  ]},
+  quizB:[
+    {q:"물에 들어가기 전에 무엇을 했나요?", opts:["준비 운동","낮잠","공놀이"], a:0},
+    {q:"나는 무엇을 단단히 입었나요?", opts:["잠옷","구명조끼","외투"], a:1},
+    {q:"바닷물은 어떤 맛이었나요?", opts:["달았다","시었다","짰다"], a:2},
+    {q:"발밑으로 지나간 것은?", opts:["게","물고기","해파리"], a:0},
+    {q:"동생이 귀에 대 본 것은?", opts:["조개","소라","돌"], a:1}
+  ],
+  dictation:["바닷가","조개껍데기","갈매기","구명조끼","파란 바다","커다란 모래성","짠 바닷물","파도가 밀려와요.","모래로 성을 만들었어요.","안전하게 놀기로 약속했어요."],
+  cloze:[
+    {s:"___가 밀려와서 발을 간지럽혔어요.", opts:["파도","모래","바람"], a:0},
+    {s:"나는 모래로 커다란 ___을 만들었어요.", opts:["배","성","집"], a:1},
+    {s:"저녁이 되자 ___이 바다를 붉게 물들였어요.", opts:["구름","달","노을"], a:2},
+    {s:"나는 ___를 단단히 입었어요.", opts:["구명조끼","잠옷","외투"], a:0},
+    {s:"우리는 ___ 놀기로 약속했어요.", opts:["빠르게","안전하게","크게"], a:1}
+  ],
+  copy:["바닷가에서 커다란 모래성을 만들었어요.","갈매기가 머리 위로 날아갔어요.","안전하게 놀기로 약속했어요."],
+  free:["내가 가 보고 싶은 곳은 어디인가요? 한 문장으로 써 보세요.","물놀이할 때 지켜야 할 약속은 무엇인가요? 한 문장으로 써 보세요."]
 },
 {
   title:"나의 여름 방학", theme:"종합 · 내 이야기 쓰기",
-  words:["방학","아침","선생님","낱말","문장","자랑","또박또박","술술","일찍","늘었다"],
-  passage:[
+  wordsA:["방학","아침","선생님","낱말","문장","자랑","또박또박","술술","일찍","늘었다"],
+  passageA:{ title:"날마다 조금씩", sentences:[
     "즐거운 여름 방학이 / 시작되었어요.",
     "나는 아침마다 / 일찍 일어났어요.",
     "학교에 와서 / 선생님과 공부했어요.",
@@ -366,20 +577,67 @@ const DAYS = [
     "이제는 긴 문장도 / 술술 읽어요.",
     "선생님이 많이 늘었다고 / 칭찬해 주셨어요.",
     "나는 내가 / 정말 자랑스러워요."
-  ],
-  quiz:[
+  ]},
+  quizA:[
     {q:"나는 아침마다 어떻게 했나요?", opts:["늦게 잤다","일찍 일어났다","놀았다"], a:1},
     {q:"매일 무엇을 소리 내어 읽었나요?", opts:["글","노래","숫자"], a:0},
     {q:"지금은 긴 문장을 어떻게 읽나요?", opts:["더듬더듬","못 읽는다","술술"], a:2},
-    {q:"나는 내가 어떻다고 했나요?", opts:["자랑스럽다","부끄럽다","속상하다"], a:0}
+    {q:"나는 내가 어떻다고 했나요?", opts:["자랑스럽다","부끄럽다","속상하다"], a:0},
+    {q:"선생님은 무엇이라고 하셨나요?", opts:["더 하라고","많이 늘었다고","쉬라고"], a:1}
   ],
-  dictation:["방학","문장","또박또박","나는 매일 책을 읽어요.","이제는 술술 읽어요."],
-  copy:"나는 내가 정말 자랑스러워요.",
-  free:"이번 방학에 내가 가장 잘한 일은 무엇인가요? 한 문장으로 써 보세요."
+  wordsB:["공책","연필","일기","제목","약속","꾸준히","다짐","가을","기대","해냈다"],
+  passageB:{ title:"내가 쓴 일기", sentences:[
+    "나는 공책에 / 일기를 썼어요.",
+    "연필을 바르게 / 잡았어요.",
+    "제목은 \u201C내가 해냈다\u201D로 / 정했어요.",
+    "칸을 맞추어 / 또박또박 썼어요.",
+    "틀린 글자는 / 지우고 다시 썼어요.",
+    "일곱 날 동안 / 꾸준히 공부했어요.",
+    "이제는 받아쓰기도 / 덜 어려워요.",
+    "나는 앞으로도 / 매일 읽기로 다짐했어요.",
+    "가을에는 더 잘 읽을 거예요.",
+    "나는 나와 / 약속했어요."
+  ]},
+  quizB:[
+    {q:"나는 공책에 무엇을 썼나요?", opts:["일기","편지","시"], a:0},
+    {q:"일기의 제목은 무엇인가요?", opts:["여름 방학","내가 해냈다","우리 가족"], a:1},
+    {q:"틀린 글자는 어떻게 했나요?", opts:["그냥 두었다","찢었다","지우고 다시 썼다"], a:2},
+    {q:"며칠 동안 꾸준히 공부했나요?", opts:["일곱 날","세 날","열 날"], a:0},
+    {q:"앞으로 무엇을 하기로 다짐했나요?", opts:["매일 놀기","매일 읽기","매일 자기"], a:1}
+  ],
+  dictation:["방학","문장","일기","공책","또박또박","술술 읽어요","꾸준히 공부","나는 매일 책을 읽어요.","이제는 술술 읽어요.","나는 내가 자랑스러워요."],
+  cloze:[
+    {s:"나는 아침마다 ___ 일어났어요.", opts:["일찍","늦게","조용히"], a:0},
+    {s:"어려운 낱말도 ___ 썼어요.", opts:["빠르게","또박또박","대충"], a:1},
+    {s:"이제는 긴 문장도 ___ 읽어요.", opts:["더듬더듬","천천히","술술"], a:2},
+    {s:"나는 공책에 ___를 썼어요.", opts:["일기","편지","그림"], a:0},
+    {s:"틀린 글자는 지우고 다시 ___어요.", opts:["읽었","썼","보았"], a:1}
+  ],
+  copy:["나는 내가 정말 자랑스러워요.","날마다 조금씩 빨라졌어요.","앞으로도 매일 읽기로 다짐했어요."],
+  free:["이번 방학에 내가 가장 잘한 일은 무엇인가요? 한 문장으로 써 보세요.","앞으로 어떤 사람이 되고 싶은가요? 한 문장으로 써 보세요."]
 }
 ];
 
-const STEP_NAMES = ["낱말 익히기","듣고 따라 읽기","소리 내어 읽기","내용 확인 퀴즈","낱말 쓰기","받아쓰기","문장 따라 쓰기","내 문장 쓰기"];
+
+/* ===================== 단계 정의 (3차시) ===================== */
+const STEP_DEFS=[
+  {name:"낱말 익히기 ①", period:1, kind:"words",     set:"A"},
+  {name:"글 ① 듣고 따라 읽기", period:1, kind:"listen", set:"A"},
+  {name:"글 ① 소리 내어 읽기", period:1, kind:"read",   set:"A"},
+  {name:"글 ① 내용 퀴즈",      period:1, kind:"quiz",   set:"A"},
+  {name:"낱말 익히기 ②", period:2, kind:"words",     set:"B"},
+  {name:"글 ② 듣고 따라 읽기", period:2, kind:"listen", set:"B"},
+  {name:"글 ② 소리 내어 읽기", period:2, kind:"read",   set:"B"},
+  {name:"글 ② 내용 퀴즈",      period:2, kind:"quiz",   set:"B"},
+  {name:"낱말 쓰기 (20개)",    period:2, kind:"write"},
+  {name:"받아쓰기 (10문제)",   period:3, kind:"dictation"},
+  {name:"빈칸 채우기",         period:3, kind:"cloze"},
+  {name:"문장 따라 쓰기",      period:3, kind:"copy"},
+  {name:"내 문장 쓰기",        period:3, kind:"free"}
+];
+const FINISH_STEP=STEP_DEFS.length;
+function cur(){ return STEP_DEFS[state.step] || {}; }
+function allWords(d){ return d.wordsA.concat(d.wordsB); }
 
 /* ===================== 상태 ===================== */
 const VOICE_KEY="hangul-summer-voice", PITCH_KEY="hangul-summer-pitch";
@@ -390,16 +648,29 @@ const state = {
   showSlash:true, rate:0.75,
   voiceName: localStorage.getItem(VOICE_KEY) || "",
   pitch: parseFloat(localStorage.getItem(PITCH_KEY) || "1.1"),
-  wordsRead:[],
-  timerSec:0, timerId:null, running:false, stumbles:0,
-  round:0, roundTimes:[], readDone:false,
-  quizIdx:0, quizScore:0, quizAnswered:false,
+  wordsRead:{A:[],B:[]},
+  timerSec:0, timerId:null, running:false,
+  round:{A:0,B:0}, roundTimes:{A:[],B:[]}, readDone:{A:false,B:false}, roundFeedback:false,
+  quizIdx:{A:0,B:0}, quizScore:{A:0,B:0}, quizAnswered:false,
   wordIdx:0, wordsDone:[], wordCover:false,
-  dictIdx:0, dictShown:false, dictHint:0
+  dictIdx:0, dictShown:false, dictHint:0,
+  clozeIdx:0, clozeScore:0, clozeAnswered:false,
+  copyIdx:0, freeIdx:0
 };
+function resetDayState(){
+  state.step=0;
+  state.wordsRead={A:[],B:[]};
+  state.timerSec=0; state.running=false;
+  state.round={A:0,B:0}; state.roundTimes={A:[],B:[]}; state.readDone={A:false,B:false}; state.roundFeedback=false;
+  state.quizIdx={A:0,B:0}; state.quizScore={A:0,B:0}; state.quizAnswered=false;
+  state.wordIdx=0; state.wordsDone=[]; state.wordCover=false;
+  state.dictIdx=0; state.dictShown=false; state.dictHint=0;
+  state.clozeIdx=0; state.clozeScore=0; state.clozeAnswered=false;
+  state.copyIdx=0; state.freeIdx=0;
+  clearInterval(state.timerId);
+}
 
 /* ===================== TTS ===================== */
-/* iOS(아이패드)는 첫 화면 터치가 있어야 소리가 납니다. */
 let ttsUnlocked=false, koVoice=null;
 function koVoices(){
   if(!("speechSynthesis" in window)) return [];
@@ -410,41 +681,48 @@ function pickVoice(){
   const vs=koVoices();
   koVoice = vs.find(v=>v.name===state.voiceName) || vs.find(isNice) || vs[0] || null;
 }
-if("speechSynthesis" in window){
-  pickVoice();
-  speechSynthesis.onvoiceschanged=pickVoice;
-}
+if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
 function unlockTTS(){
   if(ttsUnlocked||!("speechSynthesis" in window)) return;
-  const u=new SpeechSynthesisUtterance(" ");
-  u.volume=0; speechSynthesis.speak(u);
+  const u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u);
   ttsUnlocked=true; pickVoice();
 }
 document.addEventListener("pointerdown", unlockTTS, {once:true});
-
-function plain(t){ return t.replace(/\//g," ").replace(/[\u201C\u201D"]/g,""); }
+function plain(t){ return t.replace(/\//g," ").replace(/[\u201C\u201D"]/g,"").replace(/___/g,"무엇"); }
 function speak(text){
   if(!("speechSynthesis" in window)) return;
-  unlockTTS();
-  speechSynthesis.cancel();
+  unlockTTS(); speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(plain(text));
   u.lang="ko-KR"; u.rate=state.rate; u.pitch=state.pitch;
   if(!koVoice) pickVoice();
   if(koVoice) u.voice=koVoice;
   speechSynthesis.speak(u);
 }
-function speakWord(i){ speak(DAYS[state.day].words[i]); markWordRead(i); }
+function passageOf(d,set){ return set==="B" ? d.passageB : d.passageA; }
+function wordsOf(d,set){ return set==="B" ? d.wordsB : d.wordsA; }
+function quizOf(d,set){ return set==="B" ? d.quizB : d.quizA; }
+
+function speakWord(i){
+  const d=DAYS[state.day], s=cur().set;
+  speak(wordsOf(d,s)[i]); markWordRead(i);
+}
 function speakSent(i){
   document.querySelectorAll(".sentence").forEach(el=>el.classList.remove("active"));
   const el=document.getElementById("sent"+i); if(el) el.classList.add("active");
-  speak(DAYS[state.day].passage[i]);
+  speak(passageOf(DAYS[state.day],cur().set).sentences[i]);
 }
 function speakDict(){ speak(DAYS[state.day].dictation[state.dictIdx]); }
-function speakCopy(){ speak(DAYS[state.day].copy); }
+function speakDictSlow(){ const k=state.rate; state.rate=0.5; speakDict(); state.rate=k; }
+function speakCopy(){ speak(DAYS[state.day].copy[state.copyIdx]); }
+function speakWriteWord(){ speak(allWords(DAYS[state.day])[state.wordIdx]); }
+function speakCloze(){
+  const c=DAYS[state.day].cloze[state.clozeIdx];
+  speak(c.s.replace("___", c.opts[c.a]));
+}
 function playAll(){
   if(!("speechSynthesis" in window)) return;
   unlockTTS();
-  const list=DAYS[state.day].passage;
+  const list=passageOf(DAYS[state.day],cur().set).sentences;
   speechSynthesis.cancel();
   if(!koVoice) pickVoice();
   list.forEach((s,i)=>{
@@ -457,24 +735,21 @@ function playAll(){
   });
 }
 
-/* ===================== 저장 (닉네임별) ===================== */
+/* ===================== 저장 ===================== */
 function lsKey(){ return STORAGE_KEY + ":" + (state.nick||"게스트"); }
-
 function loadLocal(){
   try{ const raw=localStorage.getItem(lsKey()); state.records = raw?JSON.parse(raw):{}; }
   catch(e){ state.records={}; }
 }
 async function loadRecords(){
-  loadLocal();
-  render();
+  loadLocal(); render();
   if(!db || !state.nick) return;
   state.syncing=true; render();
   try{
     const doc=await db.collection("literacy").doc(state.nick).get();
     if(doc.exists){
       const cloud=doc.data().days || {};
-      // 클라우드 기록을 기준으로 병합 (로컬에만 있는 날짜는 유지)
-      state.records = Object.assign({}, state.records, cloud);
+      state.records=Object.assign({}, state.records, cloud);
       localStorage.setItem(lsKey(), JSON.stringify(state.records));
     }
   }catch(e){ console.error("불러오기 실패", e); }
@@ -486,25 +761,19 @@ async function saveRecord(rec){
   if(!db || !state.nick) return;
   try{
     await db.collection("literacy").doc(state.nick).set({
-      nick: state.nick,
-      updatedAt: new Date().toISOString(),
-      days: state.records
-    }, {merge:true});
+      nick:state.nick, updatedAt:new Date().toISOString(), days:state.records
+    },{merge:true});
   }catch(e){ console.error("저장 실패", e); }
 }
 async function resetRecords(){
   if(!confirm("모든 학습 기록을 정말 지울까요?")) return;
   state.records={}; localStorage.removeItem(lsKey());
-  if(db && state.nick){
-    try{ await db.collection("literacy").doc(state.nick).set({days:{}}, {merge:true}); }catch(e){ console.error(e); }
-  }
+  if(db && state.nick){ try{ await db.collection("literacy").doc(state.nick).set({days:{}},{merge:true}); }catch(e){} }
   render();
 }
 function setNick(name){
-  state.nick=name.trim();
-  localStorage.setItem(NICK_KEY, state.nick);
-  state.screen="home";
-  loadRecords();
+  state.nick=name.trim(); localStorage.setItem(NICK_KEY,state.nick);
+  state.screen="home"; loadRecords();
 }
 function logout(){
   state.nick=""; localStorage.removeItem(NICK_KEY);
@@ -515,7 +784,7 @@ function logout(){
 const app=document.getElementById("app");
 function render(){
   if("speechSynthesis" in window) speechSynthesis.cancel();
-  if(!state.nick) { renderLogin(); return; }
+  if(!state.nick){ renderLogin(); return; }
   if(state.screen==="home") renderHome();
   else if(state.screen==="teacher") renderTeacher();
   else if(state.screen==="voice") renderVoice();
@@ -532,13 +801,10 @@ function renderLogin(){
       <p class="hint">기록은 이 이름으로 저장돼요. 다음에도 같은 이름으로 들어오면 이어서 할 수 있어요.</p>
       <input id="nickInput" class="nick-input" placeholder="예) 지훈이" maxlength="12"
         onkeydown="if(event.key==='Enter')submitNick()">
-      <div class="btn-row">
-        <button class="btn" onclick="submitNick()">시작하기 →</button>
-      </div>
+      <div class="btn-row"><button class="btn" onclick="submitNick()">시작하기 →</button></div>
       <p class="hint" style="margin-top:14px;">
         ${cloudOK?"☁️ 기록이 인터넷에 저장돼서 다른 기기에서도 이어서 볼 수 있어요."
-                 :"💾 지금은 이 기기에만 저장돼요. (선생님: 코드 위쪽 firebaseConfig를 채우면 클라우드 저장이 켜집니다)"}
-      </p>
+                 :"💾 지금은 이 기기에만 저장돼요."}</p>
     </div>`;
   setTimeout(()=>{ const el=document.getElementById("nickInput"); if(el) el.focus(); },200);
 }
@@ -548,7 +814,6 @@ function submitNick(){
   if(!v){ el.focus(); return; }
   setNick(v);
 }
-
 function renderHome(){
   const doneCount=Object.keys(state.records).length;
   const cards=DAYS.map((d,i)=>{
@@ -557,7 +822,8 @@ function renderHome(){
       <span class="dnum">${i+1}일째</span>
       <h3>${d.title}</h3>
       <p>${d.theme}</p>
-      <div class="meta">약 2시간 · 8단계</div>
+      <div class="meta">3차시 · 약 2시간</div>
+      <div class="meta">글 2편 · 낱말 20개 · 받아쓰기 10</div>
       ${done?'<div class="stamp">참<br>잘했어요</div>':""}
     </button>`;
   }).join("");
@@ -575,25 +841,19 @@ function renderHome(){
     <button class="teacher-link" onclick="openTeacher()">📋 선생님 기록 보기</button>`;
 }
 function openVoice(){ state.screen="voice"; render(); }
-function openDay(i){
-  state.screen="day"; state.day=i; state.step=0;
-  state.wordsRead=[]; state.timerSec=0; state.stumbles=0; state.running=false;
-  state.round=0; state.roundTimes=[]; state.readDone=false;
-  state.quizIdx=0; state.quizScore=0; state.quizAnswered=false;
-  state.wordIdx=0; state.wordsDone=[]; state.wordCover=false;
-  state.dictIdx=0; state.dictShown=false; state.dictHint=0;
-  clearInterval(state.timerId);
-  render();
-}
+function openDay(i){ state.screen="day"; state.day=i; resetDayState(); render(); }
 function openTeacher(){ state.screen="teacher"; render(); }
 function goHome(){ clearInterval(state.timerId); state.screen="home"; render(); }
+
 function dayShell(inner){
   const d=DAYS[state.day];
-  const dots=STEP_NAMES.map((name,s)=>
-    `<button class="step-dot ${s===state.step?"now":(s<state.step?"on":"")}" title="${name}" onclick="goStep(${s})"></button>`).join("");
-  const prev = state.step>0
-    ? `<button class="back-btn" onclick="goStep(${state.step-1})">◀ 이전 단계</button>` : "";
-  const cur = STEP_NAMES[state.step] ? `<span class="step-name">${state.step+1}. ${STEP_NAMES[state.step]}</span>` : "";
+  const dots=STEP_DEFS.map((sd,s)=>
+    `<button class="step-dot p${sd.period} ${s===state.step?"now":(s<state.step?"on":"")}"
+       title="${sd.period}차시 · ${sd.name}" onclick="goStep(${s})"></button>`).join("");
+  const prev = state.step>0 ? `<button class="back-btn" onclick="goStep(${state.step-1})">◀ 이전 단계</button>` : "";
+  const sd=STEP_DEFS[state.step];
+  const cap = sd ? `<span class="period-badge p${sd.period}">${sd.period}차시</span>
+      <span class="step-name">${state.step+1}. ${sd.name}</span>` : "";
   app.innerHTML=`
     <div class="topbar">
       <button class="back-btn" onclick="goHome()">← 처음으로</button>
@@ -601,38 +861,43 @@ function dayShell(inner){
       ${prev}
     </div>
     <div class="steps">${dots}</div>
-    <div class="step-caption">${cur}<span class="step-tip">동그라미를 눌러 원하는 단계로 이동할 수 있어요</span></div>
+    <div class="step-caption">${cap}<span class="step-tip">동그라미를 눌러 단계 이동</span></div>
     <div class="panel">${inner}</div>`;
 }
 function goStep(s){
-  if(s<0 || s>=STEP_NAMES.length) return;
+  if(s<0 || s>FINISH_STEP) return;
   clearInterval(state.timerId); state.running=false;
-  state.step=s;
-  if(s===3) state.quizAnswered=false;   // 퀴즈는 현재 문제부터 다시
+  state.step=s; state.quizAnswered=false; state.clozeAnswered=false; state.roundFeedback=false;
   render();
 }
-function nextStep(){ state.step++; render(); }
+function nextStep(){ goStep(state.step+1); }
 function setRate(r){ state.rate=r; render(); }
 function toggleSlash(){ state.showSlash=!state.showSlash; render(); }
 function fmtTime(s){ return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
 
 function renderDay(){
-  const fns=[renderWordCards,renderListen,renderReadAloud,renderQuiz,renderWordWrite,renderDictation,renderCopyWrite,renderFreeWrite,renderFinish];
-  fns[state.step]();
+  if(state.step>=FINISH_STEP){ renderFinish(); return; }
+  const k=cur().kind;
+  ({words:renderWordCards, listen:renderListen, read:renderReadAloud, quiz:renderQuiz,
+    write:renderWordWrite, dictation:renderDictation, cloze:renderCloze,
+    copy:renderCopyWrite, free:renderFreeWrite}[k])();
 }
 
-/* ---------- ① 낱말 익히기 ---------- */
+/* ---------- 낱말 익히기 ---------- */
 function markWordRead(i){
-  if(!state.wordsRead.includes(i)){ state.wordsRead.push(i);
-    const el=document.getElementById("wc"+i); if(el) el.classList.add("read"); }
+  const s=cur().set;
+  if(!state.wordsRead[s].includes(i)){
+    state.wordsRead[s].push(i);
+    const el=document.getElementById("wc"+i); if(el) el.classList.add("read");
+  }
 }
 function renderWordCards(){
-  const d=DAYS[state.day];
-  const cards=d.words.map((w,i)=>
-    `<button class="wcard ${state.wordsRead.includes(i)?"read":""}" id="wc${i}" onclick="speakWord(${i})">${w}</button>`).join("");
+  const d=DAYS[state.day], s=cur().set, ws=wordsOf(d,s);
+  const cards=ws.map((w,i)=>
+    `<button class="wcard ${state.wordsRead[s].includes(i)?"read":""}" id="wc${i}" onclick="speakWord(${i})">${w}</button>`).join("");
   dayShell(`
-    <h3>① 오늘의 낱말 익히기</h3>
-    <p class="hint">낱말을 누르면 소리가 나요. 듣고 따라 읽어 보세요. (${state.wordsRead.length}/${d.words.length})</p>
+    <h3>오늘의 낱말 ${s==="A"?"①":"②"}</h3>
+    <p class="hint">낱말을 누르면 소리가 나요. 듣고 따라 읽어 보세요. (${state.wordsRead[s].length}/${ws.length})</p>
     <div class="toggle-row">
       <button class="chip ${state.rate===0.6?"on":""}" onclick="setRate(0.6)">🐢 아주 천천히</button>
       <button class="chip ${state.rate===0.75?"on":""}" onclick="setRate(0.75)">🚶 천천히</button>
@@ -642,16 +907,16 @@ function renderWordCards(){
     <div class="btn-row"><button class="btn" onclick="nextStep()">다음으로 →</button></div>`);
 }
 
-/* ---------- ② 듣고 따라 읽기 ---------- */
+/* ---------- 듣고 따라 읽기 ---------- */
 function renderListen(){
-  const d=DAYS[state.day];
-  const sents=d.passage.map((s,i)=>{
+  const d=DAYS[state.day], p=passageOf(d,cur().set);
+  const sents=p.sentences.map((s,i)=>{
     const html=state.showSlash ? s.replace(/\//g,'<span class="slash">∨</span>') : s.replace(/\s*\/\s*/g," ");
     return `<div class="sentence" id="sent${i}"><span class="num">${i+1}</span>${html}
       <button class="listen-btn" onclick="speakSent(${i})">🔊</button></div>`;
   }).join("");
   dayShell(`
-    <h3>② 듣고 따라 읽기</h3>
+    <h3>${p.title}</h3>
     <p class="hint">🔊 를 누르고 선생님과 함께 한 문장씩 따라 읽어요. ∨ 표시에서 살짝 쉬어요.</p>
     <div class="toggle-row">
       <button class="chip ${state.showSlash?"on":""}" onclick="toggleSlash()">∨ 끊어 읽기 표시</button>
@@ -666,72 +931,31 @@ function renderListen(){
     </div>`);
 }
 
-/* ---------- ③ 소리 내어 읽기 (3회 반복) ---------- */
+/* ---------- 소리 내어 읽기 (3회) ---------- */
 function renderReadAloud(){
-  if(state.readDone){ renderReadResult(); return; }
-  const d=DAYS[state.day];
-  const text=d.passage.map((s,i)=>`<div class="sentence"><span class="num">${i+1}</span>${s.replace(/\s*\/\s*/g," ")}</div>`).join("");
+  const s=cur().set;
+  if(state.roundFeedback){ renderRoundFeedback(); return; }
+  if(state.readDone[s]){ renderReadResult(); return; }
+  const d=DAYS[state.day], p=passageOf(d,s);
+  const text=p.sentences.map((x,i)=>`<div class="sentence"><span class="num">${i+1}</span>${x.replace(/\s*\/\s*/g," ")}</div>`).join("");
   const rounds=[0,1,2].map(r=>{
     let cls="round-pill";
-    if(state.roundTimes[r]!=null) cls+=" done";
-    else if(r===state.round) cls+=" now";
-    return `<span class="${cls}">${r+1}회 ${state.roundTimes[r]!=null?fmtTime(state.roundTimes[r]):""}</span>`;
+    if(state.roundTimes[s][r]!=null) cls+=" done";
+    else if(r===state.round[s]) cls+=" now";
+    return `<span class="${cls}">${r+1}회 ${state.roundTimes[s][r]!=null?fmtTime(state.roundTimes[s][r]):""}</span>`;
   }).join("");
-  const endLabel = state.round<2 ? (state.round+1)+"회 끝! →" : "3회 끝! 결과 보기 →";
+  const endLabel = state.round[s]<2 ? (state.round[s]+1)+"회 끝! →" : "3회 끝! 결과 보기 →";
   dayShell(`
-    <h3>③ 소리 내어 읽기 <span style="font-size:17px;color:var(--sub)">— ${state.round+1}번째</span></h3>
-    <p class="hint">시작을 누르고 혼자 힘으로 끝까지 읽어요. 읽을수록 빨라지는 걸 확인해요.<br>
-    (선생님: 막히거나 더듬으면 ＋ 를 눌러 주세요)</p>
+    <h3>${p.title} <span style="font-size:17px;color:var(--sub)">— ${state.round[s]+1}번째 읽기</span></h3>
+    <p class="hint">시작을 누르고 혼자 힘으로 끝까지 읽어요. 지난 회차보다 빨라지는 걸 목표로!</p>
     <div class="round-row">${rounds}</div>
     <div class="control-bar">
       <div class="timer" id="timer">${fmtTime(state.timerSec)}</div>
       <button class="btn ${state.running?"ghost":""}" id="timerBtn" onclick="toggleTimer()">${state.running?"⏸ 멈추기":"▶ 시작!"}</button>
-      <div class="counter">
-        <button onclick="bumpStumble(-1)">−</button>
-        <div class="cnum" id="stumble">${state.stumbles}</div>
-        <button onclick="bumpStumble(1)">＋</button>
-      </div>
-      <div class="counter-label">더듬은 횟수</div>
     </div>
     ${text}
-    <div class="btn-row">
-      <button class="btn mint" onclick="finishRound()">${endLabel}</button>
-    </div>`);
+    <div class="btn-row"><button class="btn mint" onclick="finishRound()">${endLabel}</button></div>`);
 }
-
-/* ---------- ③-결과: 3회 기록 비교 ---------- */
-function renderReadResult(){
-  const t=state.roundTimes;
-  const max=Math.max(...t);
-  const bars=t.map((sec,i)=>{
-    const pct=Math.max(12, Math.round(sec/max*100));
-    const best = sec===Math.min(...t);
-    return `<div class="bar-row">
-      <span class="bar-label">${i+1}회</span>
-      <div class="bar-track"><div class="bar-fill ${best?"best":""}" style="width:${pct}%"></div></div>
-      <span class="bar-time">${fmtTime(sec)}</span>
-    </div>`;
-  }).join("");
-  const diff=t[0]-t[2];
-  const msg = diff>0
-    ? `1회보다 <b>${diff}초</b>나 빨라졌어요! 정말 대단해요 🎉`
-    : (diff===0 ? "1회와 같은 속도로 안정되게 읽었어요 👍"
-                : "천천히 또박또박 읽었어요. 정확하게 읽는 것도 아주 중요해요 👍");
-  dayShell(`
-    <h3>📈 세 번 읽기 결과</h3>
-    <p class="hint">막대가 짧아질수록 빨리 읽은 거예요.</p>
-    <div class="bars">${bars}</div>
-    <div class="result-msg">${msg}</div>
-    <p class="hint" style="text-align:center;">더듬은 횟수 ${state.stumbles}번</p>
-    <div class="btn-row" style="justify-content:center;">
-      <button class="btn ghost" onclick="retryReading()">↺ 한 번 더 읽기</button>
-      <button class="btn" onclick="afterReading()">다음으로 →</button>
-    </div>`);
-}
-function retryReading(){
-  state.readDone=false; state.round=2; state.timerSec=0; render();
-}
-function afterReading(){ state.readDone=false; nextStep(); }
 function toggleTimer(){
   if(state.running){ clearInterval(state.timerId); state.running=false; }
   else{
@@ -742,25 +966,104 @@ function toggleTimer(){
   const b=document.getElementById("timerBtn");
   if(b){ b.textContent=state.running?"⏸ 멈추기":"▶ 시작!"; b.classList.toggle("ghost",state.running); }
 }
-function bumpStumble(n){
-  state.stumbles=Math.max(0,state.stumbles+n);
-  const el=document.getElementById("stumble"); if(el) el.textContent=state.stumbles;
-}
 function finishRound(){
+  const s=cur().set;
   clearInterval(state.timerId); state.running=false;
-  state.roundTimes[state.round]=state.timerSec;
-  if(state.round<2){ state.round++; state.timerSec=0; render(); }
-  else { state.readDone=true; render(); }
+  state.roundTimes[s][state.round[s]]=state.timerSec;
+  state.roundFeedback=true; render();
 }
+function continueAfterFeedback(){
+  const s=cur().set;
+  state.roundFeedback=false;
+  if(state.round[s]<2){ state.round[s]++; state.timerSec=0; }
+  else state.readDone[s]=true;
+  render();
+}
+function renderRoundFeedback(){
+  const s=cur().set, r=state.round[s], t=state.roundTimes[s], now=t[r];
+  const last=(r===2);
+  let icon, headline, sub, tone, burst="";
+  if(r===0){
+    icon="⏱"; tone="first";
+    headline=`첫 기록은 ${fmtTime(now)}!`;
+    sub="이제 이 기록을 깨 볼까요?";
+  }else{
+    const diff=t[r-1]-now;
+    if(diff>0){
+      icon="🎉"; tone="up";
+      headline=`${diff}초 빨라졌어요!`;
+      sub="지난번보다 훨씬 잘 읽었어요. 정말 대단해요!";
+      burst='<div class="burst">'+["⭐","✨","🎊","⭐","✨"].map((e,i)=>`<span style="--i:${i}">${e}</span>`).join("")+'</div>';
+    }else if(diff===0){
+      icon="👍"; tone="same";
+      headline="지난번과 똑같아요!";
+      sub="안정되게 읽고 있어요. 다음엔 조금만 더 빠르게!";
+    }else{
+      icon="💪"; tone="down";
+      headline=`이번엔 ${-diff}초 느려졌어요`;
+      sub="조금 아쉽지만 괜찮아요. 숨을 고르고 한 번 더 도전해요!";
+    }
+  }
+  const bars=t.slice(0,r+1).map((sec,i)=>{
+    const max=Math.max(...t.slice(0,r+1));
+    const pct=Math.max(14, Math.round(sec/max*100));
+    return `<div class="bar-row"><span class="bar-label">${i+1}회</span>
+      <div class="bar-track"><div class="bar-fill ${i===r?"now":""}" style="width:${pct}%"></div></div>
+      <span class="bar-time">${fmtTime(sec)}</span></div>`;
+  }).join("");
+  dayShell(`
+    <div class="feedback ${tone}">
+      ${burst}
+      <div class="fb-icon">${icon}</div>
+      <div class="fb-time">${fmtTime(now)}</div>
+      <h3 class="fb-headline">${headline}</h3>
+      <p class="fb-sub">${sub}</p>
+    </div>
+    <div class="bars">${bars}</div>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn ghost" onclick="retryThisRound()">↺ 이번 회차 다시</button>
+      <button class="btn" onclick="continueAfterFeedback()">${last?"결과 보기 →":(r+2)+"회 도전! →"}</button>
+    </div>`);
+}
+function retryThisRound(){
+  const s=cur().set;
+  state.roundTimes[s][state.round[s]]=null;
+  state.roundFeedback=false; state.timerSec=0; render();
+}
+function renderReadResult(){
+  const s=cur().set, t=state.roundTimes[s], max=Math.max(...t);
+  const bars=t.map((sec,i)=>{
+    const pct=Math.max(12, Math.round(sec/max*100));
+    const best = sec===Math.min(...t);
+    return `<div class="bar-row"><span class="bar-label">${i+1}회</span>
+      <div class="bar-track"><div class="bar-fill ${best?"best":""}" style="width:${pct}%"></div></div>
+      <span class="bar-time">${fmtTime(sec)}</span></div>`;
+  }).join("");
+  const diff=t[0]-t[2];
+  const msg = diff>0 ? `1회보다 <b>${diff}초</b>나 빨라졌어요! 정말 대단해요 🎉`
+    : (diff===0 ? "1회와 같은 속도로 안정되게 읽었어요 👍"
+                : "천천히 또박또박 읽었어요. 정확하게 읽는 것도 아주 중요해요 👍");
+  dayShell(`
+    <h3>📈 세 번 읽기 결과</h3>
+    <p class="hint">막대가 짧아질수록 빨리 읽은 거예요.</p>
+    <div class="bars">${bars}</div>
+    <div class="result-msg">${msg}</div>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn ghost" onclick="retryReading()">↺ 한 번 더 읽기</button>
+      <button class="btn" onclick="afterReading()">다음으로 →</button>
+    </div>`);
+}
+function retryReading(){ const s=cur().set; state.readDone[s]=false; state.round[s]=2; state.timerSec=0; render(); }
+function afterReading(){ nextStep(); }
 
-/* ---------- ④ 내용 확인 퀴즈 ---------- */
+/* ---------- 내용 퀴즈 ---------- */
 function renderQuiz(){
-  const d=DAYS[state.day], q=d.quiz[state.quizIdx];
+  const d=DAYS[state.day], s=cur().set, qs=quizOf(d,s), q=qs[state.quizIdx[s]];
   const opts=q.opts.map((o,i)=>`<button class="opt" id="opt${i}" onclick="answerQuiz(${i})">${o}</button>`).join("");
   dayShell(`
-    <h3>④ 내용 확인 퀴즈</h3>
-    <p class="hint">글을 떠올리며 답을 골라 보세요. 헷갈리면 앞으로 돌아가 다시 읽어도 좋아요.</p>
-    <div class="quiz-progress">${state.quizIdx+1} / ${d.quiz.length} 문제 · 맞힌 개수 ${state.quizScore}개</div>
+    <h3>내용 확인 퀴즈 ${s==="A"?"①":"②"}</h3>
+    <p class="hint">글을 떠올리며 답을 골라 보세요. 헷갈리면 앞 단계로 돌아가 다시 읽어도 좋아요.</p>
+    <div class="quiz-progress">${state.quizIdx[s]+1} / ${qs.length} 문제 · 맞힌 개수 ${state.quizScore[s]}개</div>
     <p class="quiz-q">${q.q}</p>
     <div class="quiz-opts">${opts}</div>
     <div class="quiz-feedback" id="qfb"></div>
@@ -769,60 +1072,69 @@ function renderQuiz(){
 function answerQuiz(i){
   if(state.quizAnswered) return;
   state.quizAnswered=true;
-  const d=DAYS[state.day], q=d.quiz[state.quizIdx];
+  const d=DAYS[state.day], s=cur().set, qs=quizOf(d,s), q=qs[state.quizIdx[s]];
   document.getElementById("opt"+q.a).classList.add("correct");
   const fb=document.getElementById("qfb");
-  if(i===q.a){ state.quizScore++; fb.textContent="⭕ 정답이에요! 잘했어요."; fb.style.color="var(--mint)"; }
+  if(i===q.a){ state.quizScore[s]++; fb.textContent="⭕ 정답이에요! 잘했어요."; fb.style.color="var(--mint)"; }
   else{ document.getElementById("opt"+i).classList.add("wrong"); fb.textContent="❌ 초록색이 정답이에요. 다시 읽어 볼까요?"; fb.style.color="var(--wrong)"; }
-  const last=state.quizIdx===d.quiz.length-1;
-  document.getElementById("qnext").innerHTML=
-    `<button class="btn" onclick="nextQuiz()">${last?"퀴즈 끝! →":"다음 문제 →"}</button>`;
+  const last=state.quizIdx[s]===qs.length-1;
+  document.getElementById("qnext").innerHTML=`<button class="btn" onclick="nextQuiz()">${last?"퀴즈 끝! →":"다음 문제 →"}</button>`;
 }
 function nextQuiz(){
-  const d=DAYS[state.day];
+  const d=DAYS[state.day], s=cur().set, qs=quizOf(d,s);
   state.quizAnswered=false;
-  if(state.quizIdx<d.quiz.length-1){ state.quizIdx++; render(); }
+  if(state.quizIdx[s]<qs.length-1){ state.quizIdx[s]++; render(); }
   else nextStep();
 }
 
 /* ---------- 캔버스 원고지 ---------- */
-let ctx=null, drawing=false, curGuide="", curReveal="all";
+let ctx=null, gctx=null, drawing=false, curGuide="", curReveal="all";
+state.tool="pen";
+function setTool(t){ state.tool=t; syncToolUI(); }
+function syncToolUI(){
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('on', b.dataset.tool===state.tool));
+  const c=document.getElementById('pad'); if(c) c.style.cursor = state.tool==='eraser'?'cell':'crosshair';
+}
+function toolBar(){
+  return `<div class="tool-bar">
+    <button class="tool-btn ${state.tool==='pen'?'on':''}" data-tool="pen" onclick="setTool('pen')">✏️ 연필</button>
+    <button class="tool-btn ${state.tool==='eraser'?'on':''}" data-tool="eraser" onclick="setTool('eraser')">🧽 지우개</button>
+    <button class="tool-btn" onclick="clearPad()">🗑 전부 지우기</button>
+  </div>`;
+}
 function layout(text,w){
   const MIN=62, MAX=104, pad=24;
   const maxPerRow=Math.max(1,Math.floor((w-pad*2)/MIN));
   const words=text.split(" ");
-  const lines=[]; let cur="";
+  const lines=[]; let c="";
   words.forEach(wd=>{
-    const test = cur ? cur+" "+wd : wd;
-    if(test.length>maxPerRow && cur){ lines.push(cur); cur=wd; }
-    else cur=test;
+    const test=c?c+" "+wd:wd;
+    if(test.length>maxPerRow && c){ lines.push(c); c=wd; } else c=test;
   });
-  if(cur) lines.push(cur);
+  if(c) lines.push(c);
   const longest=Math.max(...lines.map(l=>l.length));
   const cell=Math.min(MAX,(w-pad*2)/longest);
   return {lines, cell, height: Math.round(lines.length*cell + (lines.length-1)*18 + 60)};
 }
 function drawGuide(text,w,h,reveal){
-  reveal = reveal || "all";   // all | first | none
+  reveal=reveal||"all";
   const L=layout(text,w);
+  const ctx=gctx;
   ctx.clearRect(0,0,w,h);
   const startX=(w-L.cell*Math.max(...L.lines.map(l=>l.length)))/2;
-  let y=(h-(L.lines.length*L.cell+(L.lines.length-1)*18))/2;
-  let idx=0;
+  let y=(h-(L.lines.length*L.cell+(L.lines.length-1)*18))/2, idx=0;
   L.lines.forEach(line=>{
     let x=startX;
     line.split("").forEach(ch=>{
       ctx.strokeStyle="#D8E2EF"; ctx.lineWidth=2;
-      ctx.strokeRect(x,y,L.cell,L.cell);          // 띄어쓰기도 한 칸을 차지 (원고지 방식)
+      ctx.strokeRect(x,y,L.cell,L.cell);
       if(ch!==" "){
         ctx.setLineDash([6,6]);
         ctx.beginPath(); ctx.moveTo(x,y+L.cell/2); ctx.lineTo(x+L.cell,y+L.cell/2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x+L.cell/2,y); ctx.lineTo(x+L.cell/2,y+L.cell); ctx.stroke();
         ctx.setLineDash([]);
-        const show = reveal==="all" || (reveal==="first" && idx===0);
-        if(show){
-          ctx.fillStyle="#DCE5F0";
-          ctx.font=`${L.cell*0.72}px 'Jua'`;
+        if(reveal==="all" || (reveal==="first" && idx===0)){
+          ctx.fillStyle="#DCE5F0"; ctx.font=`${L.cell*0.72}px 'Jua'`;
           ctx.textAlign="center"; ctx.textBaseline="middle";
           ctx.fillText(ch,x+L.cell/2,y+L.cell/2+3);
         }
@@ -832,27 +1144,9 @@ function drawGuide(text,w,h,reveal){
     });
     y+=L.cell+18;
   });
-  ctx.lineWidth=9; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#1F3A5F";
-}
-function setupPad(guideText, blankRows, reveal){
-  curGuide=guideText; curReveal=reveal||"all";
-  const canvas=document.getElementById("pad");
-  const w=canvas.parentElement.clientWidth;
-  const h = guideText ? layout(guideText,w).height : (blankRows||1)*130+40;
-  const dpr=window.devicePixelRatio||1;
-  canvas.width=w*dpr; canvas.height=h*dpr;
-  canvas.style.height=h+"px";
-  ctx=canvas.getContext("2d"); ctx.scale(dpr,dpr);
-  if(guideText) drawGuide(guideText,w,h,curReveal); else drawBlank(w,h,blankRows||1);
-  canvas.onpointerdown=e=>{ e.preventDefault(); drawing=true; const p=pt(canvas,e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
-  canvas.onpointermove=e=>{ if(!drawing) return; e.preventDefault(); const p=pt(canvas,e); ctx.lineTo(p.x,p.y); ctx.stroke(); };
-  canvas.onpointerup=()=>drawing=false;
-  canvas.onpointercancel=()=>drawing=false;
-  canvas.onpointerleave=()=>drawing=false;
-  canvas.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
-  canvas.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
 }
 function drawBlank(w,h,rows){
+  const ctx=gctx;
   ctx.clearRect(0,0,w,h);
   ctx.strokeStyle="#D8E2EF"; ctx.lineWidth=2; ctx.setLineDash([8,8]);
   for(let r=0;r<rows;r++){
@@ -860,60 +1154,92 @@ function drawBlank(w,h,rows){
     ctx.beginPath(); ctx.moveTo(24,y); ctx.lineTo(w-24,y); ctx.stroke();
   }
   ctx.setLineDash([]);
-  ctx.lineWidth=9; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#1F3A5F";
+}
+function setupPad(guideText, blankRows, reveal){
+  curGuide=guideText; curReveal=reveal||"all";
+  const pad=document.getElementById("pad"), guide=document.getElementById("guide");
+  const box=pad.parentElement, w=box.clientWidth;
+  const h = guideText ? layout(guideText,w).height : (blankRows||1)*130+40;
+  const dpr=window.devicePixelRatio||1;
+  [guide,pad].forEach(c=>{ c.width=w*dpr; c.height=h*dpr; c.style.height=h+"px"; });
+  box.style.height=h+"px";
+  gctx=guide.getContext("2d"); gctx.scale(dpr,dpr);
+  ctx=pad.getContext("2d"); ctx.scale(dpr,dpr);
+  if(guideText) drawGuide(guideText,w,h,curReveal); else drawBlank(w,h,blankRows||1);
+  applyStroke();
+  pad.onpointerdown=e=>{ e.preventDefault(); drawing=true; applyStroke(); const p=pt(pad,e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
+  pad.onpointermove=e=>{ if(!drawing) return; e.preventDefault(); const p=pt(pad,e); ctx.lineTo(p.x,p.y); ctx.stroke(); };
+  pad.onpointerup=()=>drawing=false;
+  pad.onpointercancel=()=>drawing=false;
+  pad.onpointerleave=()=>drawing=false;
+  pad.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
+  pad.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
+  syncToolUI();
+}
+function applyStroke(){
+  if(!ctx) return;
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  if(state.tool==="eraser"){
+    ctx.globalCompositeOperation="destination-out";
+    ctx.lineWidth=34;
+  }else{
+    ctx.globalCompositeOperation="source-over";
+    ctx.lineWidth=9; ctx.strokeStyle="#1F3A5F";
+  }
 }
 function clearPad(){
-  const canvas=document.getElementById("pad");
-  const w=canvas.parentElement.clientWidth, h=parseInt(canvas.style.height);
-  if(curGuide) drawGuide(curGuide,w,h,curReveal); else drawBlank(w,h,3);
+  const pad=document.getElementById("pad");
+  if(!pad||!ctx) return;
+  const w=pad.parentElement.clientWidth, h=parseInt(pad.style.height);
+  const keep=ctx.globalCompositeOperation;
+  ctx.globalCompositeOperation="source-over";
+  ctx.clearRect(0,0,w,h);
+  ctx.globalCompositeOperation=keep;
 }
 function pt(canvas,e){ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
 
-/* ---------- ⑤ 낱말 따라 쓰기 ---------- */
+/* ---------- 낱말 쓰기 (20개) ---------- */
 function renderWordWrite(){
-  const d=DAYS[state.day];
-  const pills=d.words.map((w,i)=>{
+  const d=DAYS[state.day], ws=allWords(d), w=ws[state.wordIdx];
+  const pills=ws.map((x,i)=>{
     let cls="word-pill";
     if(state.wordsDone.includes(i)) cls+=" done";
     else if(i===state.wordIdx) cls+=" now";
-    return `<span class="${cls}">${w}</span>`;
+    return `<span class="${cls}">${x}</span>`;
   }).join("");
-  const w=d.words[state.wordIdx];
   dayShell(`
-    <h3>⑤ 낱말 따라 쓰기 <span style="font-size:17px;color:var(--sub)">${state.wordIdx+1}/${d.words.length}</span></h3>
+    <h3>낱말 쓰기 <span style="font-size:17px;color:var(--sub)">${state.wordIdx+1}/${ws.length}</span></h3>
     <p class="hint">흐린 글자를 예쁘게 따라 써요. 자신 있으면 <b>가리고 쓰기</b>로 스스로 써 보세요.</p>
     <div class="word-nav">${pills}</div>
     <div class="write-title">${state.wordCover?"❓ ❓ ❓":w}
-      <button class="listen-btn" onclick="speakWord(${state.wordIdx})">🔊 듣기</button></div>
+      <button class="listen-btn" onclick="speakWriteWord()">🔊 듣기</button></div>
     <div class="hint-bar">
       <button class="chip ${!state.wordCover?"on":""}" onclick="setCover(false)">보고 쓰기</button>
       <button class="chip ${state.wordCover?"on":""}" onclick="setCover(true)">가리고 쓰기</button>
     </div>
-    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    ${toolBar()}
+    <div class="canvas-box"><canvas id="guide"></canvas><canvas id="pad"></canvas></div>
     <div class="btn-row">
-      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
-      <button class="btn" onclick="nextWord()">${state.wordIdx<d.words.length-1?"다음 낱말 →":"다 썼어요 →"}</button>
+      <button class="btn" onclick="nextWord()">${state.wordIdx<ws.length-1?"다음 낱말 →":"다 썼어요 →"}</button>
     </div>`);
   setupPad(w, null, state.wordCover?"none":"all");
 }
 function setCover(v){ state.wordCover=v; render(); }
 function nextWord(){
-  const d=DAYS[state.day];
+  const ws=allWords(DAYS[state.day]);
   if(!state.wordsDone.includes(state.wordIdx)) state.wordsDone.push(state.wordIdx);
-  if(state.wordIdx<d.words.length-1){ state.wordIdx++; render(); }
-  else nextStep();
+  if(state.wordIdx<ws.length-1){ state.wordIdx++; render(); } else nextStep();
 }
 
-/* ---------- ⑥ 받아쓰기 (힌트 단계별 지원) ---------- */
+/* ---------- 받아쓰기 (10문제) ---------- */
 const HINT_LABEL=["칸만 보기","첫 글자 힌트","전체 흐린 글자"];
 function renderDictation(){
-  const d=DAYS[state.day];
-  const ans=d.dictation[state.dictIdx];
+  const d=DAYS[state.day], ans=d.dictation[state.dictIdx];
   const syl=ans.replace(/\s/g,"").replace(/[.,!?]/g,"").length;
-  const reveal = state.dictHint===0 ? "none" : (state.dictHint===1 ? "first" : "all");
+  const reveal = state.dictHint===0?"none":(state.dictHint===1?"first":"all");
   dayShell(`
-    <h3>⑥ 받아쓰기 <span style="font-size:17px;color:var(--sub)">${state.dictIdx+1}/${d.dictation.length}</span></h3>
-    <p class="hint">🔊 를 눌러 잘 듣고, 칸에 또박또박 쓰세요. 어려우면 <b>힌트</b>를 눌러도 괜찮아요.</p>
+    <h3>받아쓰기 <span style="font-size:17px;color:var(--sub)">${state.dictIdx+1}/${d.dictation.length}</span></h3>
+    <p class="hint">🔊 를 눌러 잘 듣고, 칸에 또박또박 쓰세요. 어려우면 <b>도움 단계</b>를 올려도 괜찮아요.</p>
     <div class="dict-bar">
       <button class="btn sm" onclick="speakDict()">🔊 문제 듣기</button>
       <button class="btn sm ghost" onclick="speakDictSlow()">🐢 천천히 듣기</button>
@@ -923,96 +1249,137 @@ function renderDictation(){
       <span class="hint-label">도움 단계</span>
       ${[0,1,2].map(h=>`<button class="chip ${state.dictHint===h?"on":""}" onclick="setHint(${h})">${HINT_LABEL[h]}</button>`).join("")}
     </div>
-    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    ${toolBar()}
+    <div class="canvas-box"><canvas id="guide"></canvas><canvas id="pad"></canvas></div>
     <div class="answer-box">${state.dictShown?ans:""}</div>
     <div class="btn-row">
-      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
       <button class="btn ghost" onclick="showDictAnswer()">👀 정답 확인</button>
       <button class="btn" onclick="nextDict()">${state.dictIdx<d.dictation.length-1?"다음 문제 →":"받아쓰기 끝 →"}</button>
     </div>
-    ${state.dictShown?'<p class="hint" style="text-align:center;margin-top:12px;">정답을 보고 한 번 더 써 보면 훨씬 잘 외워져요. 🧽 다시 쓰기를 눌러 보세요.</p>':""}`);
+    ${state.dictShown?'<p class="hint" style="text-align:center;margin-top:12px;">정답을 보고 한 번 더 써 보면 훨씬 잘 외워져요.</p>':""}`);
   setupPad(ans, null, reveal);
 }
 function setHint(h){ state.dictHint=h; render(); }
-function speakDictSlow(){
-  const keep=state.rate; state.rate=0.5;
-  speak(DAYS[state.day].dictation[state.dictIdx]);
-  state.rate=keep;
-}
 function showDictAnswer(){ state.dictShown=true; state.dictHint=2; render(); }
 function nextDict(){
   const d=DAYS[state.day];
   state.dictShown=false; state.dictHint=0;
-  if(state.dictIdx<d.dictation.length-1){ state.dictIdx++; render(); }
-  else nextStep();
+  if(state.dictIdx<d.dictation.length-1){ state.dictIdx++; render(); } else nextStep();
 }
 
-/* ---------- ⑦ 문장 따라 쓰기 ---------- */
+/* ---------- 빈칸 채우기 ---------- */
+function renderCloze(){
+  const d=DAYS[state.day], c=d.cloze[state.clozeIdx];
+  const opts=c.opts.map((o,i)=>`<button class="opt" id="copt${i}" onclick="answerCloze(${i})">${o}</button>`).join("");
+  dayShell(`
+    <h3>빈칸 채우기</h3>
+    <p class="hint">문장을 읽고 빈칸에 알맞은 낱말을 골라 보세요.</p>
+    <div class="quiz-progress">${state.clozeIdx+1} / ${d.cloze.length} 문제 · 맞힌 개수 ${state.clozeScore}개</div>
+    <p class="cloze-sentence">${c.s.replace("___",'<span class="blank">＿＿</span>')}</p>
+    <div class="quiz-opts">${opts}</div>
+    <div class="quiz-feedback" id="cfb"></div>
+    <div class="btn-row" id="cnext"></div>`);
+}
+function answerCloze(i){
+  if(state.clozeAnswered) return;
+  state.clozeAnswered=true;
+  const d=DAYS[state.day], c=d.cloze[state.clozeIdx];
+  document.getElementById("copt"+c.a).classList.add("correct");
+  const fb=document.getElementById("cfb");
+  if(i===c.a){ state.clozeScore++; fb.textContent="⭕ 맞았어요!"; fb.style.color="var(--mint)"; }
+  else{ document.getElementById("copt"+i).classList.add("wrong"); fb.textContent="❌ 초록색이 정답이에요."; fb.style.color="var(--wrong)"; }
+  speakCloze();
+  const last=state.clozeIdx===d.cloze.length-1;
+  document.getElementById("cnext").innerHTML=
+    `<button class="btn ghost" onclick="speakCloze()">🔊 문장 듣기</button>
+     <button class="btn" onclick="nextCloze()">${last?"빈칸 끝! →":"다음 문제 →"}</button>`;
+}
+function nextCloze(){
+  const d=DAYS[state.day];
+  state.clozeAnswered=false;
+  if(state.clozeIdx<d.cloze.length-1){ state.clozeIdx++; render(); } else nextStep();
+}
+
+/* ---------- 문장 따라 쓰기 (3문장) ---------- */
 function renderCopyWrite(){
-  const d=DAYS[state.day];
+  const d=DAYS[state.day], s=d.copy[state.copyIdx];
   dayShell(`
-    <h3>⑦ 문장 따라 쓰기</h3>
-    <p class="hint">오늘의 문장을 소리 내어 읽으면서 또박또박 써요. 띄어쓰기 칸은 비워 두세요.</p>
-    <div class="write-title">${d.copy}
-      <button class="listen-btn" onclick="speakCopy()">🔊 듣기</button></div>
-    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    <h3>문장 따라 쓰기 <span style="font-size:17px;color:var(--sub)">${state.copyIdx+1}/${d.copy.length}</span></h3>
+    <p class="hint">소리 내어 읽으면서 또박또박 써요. 띄어쓰기 칸은 비워 두세요.</p>
+    <div class="write-title">${s}<button class="listen-btn" onclick="speakCopy()">🔊 듣기</button></div>
+    ${toolBar()}
+    <div class="canvas-box"><canvas id="guide"></canvas><canvas id="pad"></canvas></div>
     <div class="btn-row">
-      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
-      <button class="btn" onclick="nextStep()">다 썼어요 →</button>
+      <button class="btn" onclick="nextCopy()">${state.copyIdx<d.copy.length-1?"다음 문장 →":"다 썼어요 →"}</button>
     </div>`);
-  setupPad(d.copy);
+  setupPad(s);
+}
+function nextCopy(){
+  const d=DAYS[state.day];
+  if(state.copyIdx<d.copy.length-1){ state.copyIdx++; render(); } else nextStep();
 }
 
-/* ---------- ⑧ 내 문장 쓰기 ---------- */
+/* ---------- 내 문장 쓰기 (2개) ---------- */
 function renderFreeWrite(){
-  const d=DAYS[state.day];
+  const d=DAYS[state.day], last=state.freeIdx===d.free.length-1;
   dayShell(`
-    <h3>⑧ 내 문장 쓰기</h3>
-    <p class="hint">${d.free}</p>
-    <div class="canvas-box"><canvas id="pad"></canvas></div>
+    <h3>내 문장 쓰기 <span style="font-size:17px;color:var(--sub)">${state.freeIdx+1}/${d.free.length}</span></h3>
+    <p class="hint">${d.free[state.freeIdx]}</p>
+    ${toolBar()}
+    <div class="canvas-box"><canvas id="guide"></canvas><canvas id="pad"></canvas></div>
     <div class="btn-row">
-      <button class="btn ghost" onclick="clearPad()">🧽 다시 쓰기</button>
-      <button class="btn mint" onclick="completeDay()">다 했어요! →</button>
+      <button class="btn ${last?"mint":""}" onclick="nextFree()">${last?"다 했어요! →":"다음 →"}</button>
     </div>`);
   setupPad("", 3);
+}
+function nextFree(){
+  const d=DAYS[state.day];
+  if(state.freeIdx<d.free.length-1){ state.freeIdx++; render(); } else completeDay();
 }
 
 /* ---------- 완료 ---------- */
 function completeDay(){
+  const d=DAYS[state.day];
   const rec={ day:state.day, date:new Date().toISOString().slice(0,10),
-    roundTimes:state.roundTimes, stumbles:state.stumbles,
-    quizScore:state.quizScore, quizTotal:DAYS[state.day].quiz.length };
+    readA:state.roundTimes.A, readB:state.roundTimes.B,
+    quizScore:state.quizScore.A+state.quizScore.B,
+    quizTotal:d.quizA.length+d.quizB.length,
+    clozeScore:state.clozeScore, clozeTotal:d.cloze.length };
   saveRecord(rec);
-  state.step=8; render();
+  state.step=FINISH_STEP; render();
 }
 function renderFinish(){
-  const t=state.roundTimes;
-  dayShell(`
-    <div class="finish">
+  const d=DAYS[state.day], a=state.roundTimes.A, b=state.roundTimes.B;
+  app.innerHTML=`
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">← 처음으로</button>
+      <h2>${state.day+1}일째 · ${d.title}</h2>
+    </div>
+    <div class="panel"><div class="finish">
       <div class="big-stamp">참<br>잘했어요</div>
       <div class="stars">★ ★ ★</div>
-      <h3 style="font-size:28px;">오늘도 끝까지 해냈다!</h3>
+      <h3 style="font-size:28px;">3차시를 모두 해냈어요!</h3>
       <div class="result-list">
-        📖 읽기 1회 ${t[0]!=null?fmtTime(t[0]):"-"} → 3회 ${t[2]!=null?fmtTime(t[2]):"-"}<br>
-        🗣 더듬은 횟수 ${state.stumbles}번<br>
-        ✅ 퀴즈 ${state.quizScore} / ${DAYS[state.day].quiz.length}개
+        📖 글① 1회 ${a[0]!=null?fmtTime(a[0]):"-"} → 3회 ${a[2]!=null?fmtTime(a[2]):"-"}<br>
+        📖 글② 1회 ${b[0]!=null?fmtTime(b[0]):"-"} → 3회 ${b[2]!=null?fmtTime(b[2]):"-"}<br>
+        ✅ 내용 퀴즈 ${state.quizScore.A+state.quizScore.B} / ${d.quizA.length+d.quizB.length}<br>
+        📝 빈칸 채우기 ${state.clozeScore} / ${d.cloze.length}
       </div>
       <div class="btn-row" style="justify-content:center;">
         <button class="btn" onclick="goHome()">처음으로 가기</button>
       </div>
-    </div>`);
+    </div></div>`;
 }
 
 /* ---------- 목소리 고르기 ---------- */
 function renderVoice(){
   const vs=koVoices();
   const list = vs.length ? vs.map(v=>{
-    const on = (koVoice && v.name===koVoice.name);
+    const on=(koVoice && v.name===koVoice.name);
     return `<button class="voice-row ${on?"on":""}" onclick="chooseVoice('${v.name.replace(/'/g,"\\'")}')">
       <span class="vname">${v.name}${isNice(v)?' <span class="tag">고급</span>':''}</span>
-      <span class="vpick">${on?"✔ 사용 중":"들어보기"}</span>
-    </button>`;
-  }).join("") : '<p class="hint">이 기기에 한국어 음성이 없어요. 아래 안내대로 음성을 먼저 내려받아 주세요.</p>';
+      <span class="vpick">${on?"✔ 사용 중":"들어보기"}</span></button>`;
+  }).join("") : '<p class="hint">이 기기에 한국어 음성이 없어요. 아래 안내대로 먼저 내려받아 주세요.</p>';
   app.innerHTML=`
     <div class="topbar">
       <button class="back-btn" onclick="goHome()">← 처음으로</button>
@@ -1020,46 +1387,37 @@ function renderVoice(){
     </div>
     <div class="panel">
       <h3>어떤 목소리로 읽어 줄까요?</h3>
-      <p class="hint">이름을 누르면 미리 들어볼 수 있어요. 이름에 <b>고급</b>이 붙은 목소리가 가장 자연스러워요.</p>
+      <p class="hint">이름을 누르면 미리 들어볼 수 있어요. <b>고급</b>이 붙은 목소리가 가장 자연스러워요.</p>
       ${list}
       <h3 style="margin-top:26px;">목소리 높낮이</h3>
-      <p class="hint">오른쪽으로 갈수록 밝고 부드러워져요.</p>
       <div class="slider-row">
         <span>낮게</span>
         <input type="range" id="pitch" min="0.7" max="1.6" step="0.05" value="${state.pitch}" oninput="setPitch(this.value)">
         <span>높게</span>
       </div>
-      <div class="btn-row">
-        <button class="btn ghost" onclick="testVoice()">🔊 시험 삼아 듣기</button>
-      </div>
+      <div class="btn-row"><button class="btn ghost" onclick="testVoice()">🔊 시험 삼아 듣기</button></div>
       <div class="notice" style="margin-top:22px;">
         <b>아이패드에서 더 좋은 목소리 받기</b><br>
-        설정 → 손쉬운 사용 → 콘텐츠 말하기 → 음성 → 한국어 에서
-        <b>유나(고급)</b> 또는 프리미엄 음성을 내려받으면 훨씬 자연스러워져요.
-        받은 뒤 이 화면을 새로고침하면 목록에 나타납니다.
+        설정 → 손쉬운 사용 → 콘텐츠 말하기 → 음성 → 한국어 에서 <b>유나(고급)</b>를 내려받으면 훨씬 자연스러워져요.
       </div>
     </div>`;
 }
 function chooseVoice(name){
-  state.voiceName=name;
-  localStorage.setItem(VOICE_KEY,name);
-  pickVoice();
-  speak("안녕하세요. 오늘도 함께 공부해요.");
-  render();
+  state.voiceName=name; localStorage.setItem(VOICE_KEY,name);
+  pickVoice(); speak("안녕하세요. 오늘도 함께 공부해요."); render();
 }
-function setPitch(v){
-  state.pitch=parseFloat(v);
-  localStorage.setItem(PITCH_KEY,v);
-}
+function setPitch(v){ state.pitch=parseFloat(v); localStorage.setItem(PITCH_KEY,v); }
 function testVoice(){ speak("나는 놀이터에서 그네를 탔어요."); }
 
 /* ---------- 선생님 기록 ---------- */
 function renderTeacher(){
   const rows=Object.values(state.records).sort((a,b)=>a.day-b.day).map(r=>{
-    const t=r.roundTimes||[];
+    const a=r.readA||[], b=r.readB||[];
     return `<tr><td>${r.day+1}일</td><td>${DAYS[r.day].title}</td><td>${r.date}</td>
-      <td>${t[0]!=null?fmtTime(t[0]):"-"}</td><td>${t[1]!=null?fmtTime(t[1]):"-"}</td><td>${t[2]!=null?fmtTime(t[2]):"-"}</td>
-      <td>${r.stumbles}번</td><td>${r.quizScore}/${r.quizTotal||4}</td></tr>`;
+      <td>${a[0]!=null?fmtTime(a[0]):"-"} → ${a[2]!=null?fmtTime(a[2]):"-"}</td>
+      <td>${b[0]!=null?fmtTime(b[0]):"-"} → ${b[2]!=null?fmtTime(b[2]):"-"}</td>
+      <td>${r.quizScore}/${r.quizTotal||10}</td>
+      <td>${r.clozeScore!=null?r.clozeScore+"/"+(r.clozeTotal||5):"-"}</td></tr>`;
   }).join("");
   app.innerHTML=`
     <div class="topbar">
@@ -1067,18 +1425,19 @@ function renderTeacher(){
       <h2>📋 ${state.nick} 학습 기록</h2>
     </div>
     <div class="notice">${cloudOK
-      ? `☁️ 클라우드에 저장 중입니다. Firestore <b>literacy / ${state.nick}</b> 문서에 기록돼요.`
-      : "💾 지금은 이 태블릿에만 저장돼요. 코드 위쪽 firebaseConfig를 채우면 클라우드 저장이 켜집니다."}</div>
+      ? `☁️ 클라우드 저장 중 — Firestore <b>literacy / ${state.nick}</b> 문서`
+      : "💾 이 기기에만 저장돼요."}</div>
     <div class="panel">
       ${rows?`<table>
-        <tr><th>일차</th><th>제목</th><th>날짜</th><th>1회</th><th>2회</th><th>3회</th><th>더듬음</th><th>퀴즈</th></tr>
+        <tr><th>일차</th><th>제목</th><th>날짜</th><th>글① 1회→3회</th><th>글② 1회→3회</th><th>퀴즈</th><th>빈칸</th></tr>
         ${rows}</table>`:'<p class="hint">아직 기록이 없어요. 학습을 마치면 자동으로 기록됩니다.</p>'}
-      <p class="hint" style="margin-top:14px;">💡 같은 글을 3번 읽는 <b>반복 읽기</b>는 읽기 유창성 지도의 핵심이에요. 1회와 3회 시간 차이, 그리고 날마다 줄어드는 더듬음 횟수를 확인해 보세요.</p>
+      <p class="hint" style="margin-top:14px;">💡 같은 글을 3번 읽는 <b>반복 읽기</b>가 유창성 지도의 핵심이에요. 1회→3회 단축 폭이 날마다 어떻게 달라지는지 비교해 보세요.</p>
       ${rows?'<button class="btn ghost sm" style="margin-top:10px;" onclick="resetRecords()">🗑 기록 초기화</button>':""}
     </div>`;
 }
 
 render(); loadRecords();
+
 </script>
 </body>
 </html>
