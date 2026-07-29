@@ -1069,26 +1069,26 @@ function renderDay(){
 
 /* ---------- 낱말 익히기 ---------- */
 function markWordRead(i){
-  const s=cur().set;
-  if(!state.wordsRead[s].includes(i)){
-    state.wordsRead[s].push(i);
+  const si=cur().si;
+  if(!state.wordsRead[si].includes(i)){
+    state.wordsRead[si].push(i);
     const el=document.getElementById("wc"+i); if(el) el.classList.add("read");
   }
 }
 function renderWordCards(){
-  const d=DAYS[state.day], s=cur().set, ws=wordsOf(d,s);
+  const si=cur().si, set=curSet(), ws=set.words;
   const cards=ws.map((w,i)=>
-    `<button class="wcard ${state.wordsRead[s].includes(i)?"read":""}" id="wc${i}" onclick="speakWord(${i})">${w}</button>`).join("");
+    '<button class="wcard '+(state.wordsRead[si].includes(i)?"read":"")+'" id="wc'+i+'" onclick="speakWord('+i+')">'+w+'</button>').join("");
   dayShell(`
-    <h3>오늘의 낱말 ${s==="A"?"①":"②"}</h3>
-    <p class="hint">낱말을 누르면 소리가 나요. 듣고 따라 읽어 보세요. (${state.wordsRead[s].length}/${ws.length})</p>
+    <h3>오늘의 낱말 <span style="font-size:17px;color:var(--sub)">${set.title}</span></h3>
+    <p class="hint">낱말을 누르면 소리가 나요. 듣고 따라 읽어 보세요. (${state.wordsRead[si].length}/${ws.length})</p>
     <div class="toggle-row">
-      <button class="chip ${state.rate===0.6?"on":""}" onclick="setRate(0.6)">🐢 아주 천천히</button>
-      <button class="chip ${state.rate===0.75?"on":""}" onclick="setRate(0.75)">🚶 천천히</button>
-      <button class="chip ${state.rate===1?"on":""}" onclick="setRate(1)">🏃 보통</button>
+      <button class="chip ${state.rate===0.6?"on":""}" onclick="setRate(0.6)">\ud83d\udc22 아주 천천히</button>
+      <button class="chip ${state.rate===0.75?"on":""}" onclick="setRate(0.75)">\ud83d\udeb6 천천히</button>
+      <button class="chip ${state.rate===1?"on":""}" onclick="setRate(1)">\ud83c\udfc3 보통</button>
     </div>
     <div class="word-grid">${cards}</div>
-    <div class="btn-row"><button class="btn" onclick="nextStep()">다음으로 →</button></div>`);
+    <div class="btn-row"><button class="btn" onclick="nextStep()">다음으로 \u2192</button></div>`);
 }
 
 /* ---------- 듣고 따라 읽기 ---------- */
