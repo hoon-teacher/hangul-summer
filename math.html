@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>여름방학 수학 교실</title>
+<!-- 아이패드: 홈 화면에 추가하면 앱처럼 전체화면으로 열립니다 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="한글 교실">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23FF8A3D'/%3E%3Ctext x='90' y='122' font-size='96' text-anchor='middle' fill='white' font-family='sans-serif'%3E%EA%B0%80%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF4FB; --card:#FFFFFF; --ink:#1F3A5F; --sub:#6B7C93;
+    --accent:#FF8A3D; --accent-dark:#E9731F; --mint:#2FB894; --line:#D8E2EF;
+    --guide:#DCE5F0; --star:#FFC53D; --wrong:#E45B5B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  html,body{margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Gowun Dodum',sans-serif; min-height:100vh;}
+  h1,h2,h3,.jua{font-family:'Jua',sans-serif; font-weight:400;}
+  button{font-family:inherit; border:none; cursor:pointer;}
+  .wrap{max-width:900px; margin:0 auto; padding:20px 16px 60px;}
+
+  /* 홈 */
+  .home-head{text-align:center; margin:12px 0 22px;}
+  .home-head h1{font-size:34px; margin:0;}
+  .home-head p{color:var(--sub); margin:6px 0 0; font-size:16px;}
+  .day-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px;}
+  .day-card{background:var(--card); border:2px solid var(--line); border-radius:20px; padding:18px 16px; text-align:left; position:relative; transition:transform .1s;}
+  .day-card:active{transform:scale(.97);}
+  .day-card .dnum{display:inline-block; background:var(--ink); color:#fff; border-radius:10px; padding:3px 10px; font-size:14px; font-family:'Jua';}
+  .day-card h3{margin:10px 0 4px; font-size:21px;}
+  .day-card p{margin:0; color:var(--sub); font-size:14px;}
+  .day-card .meta{margin-top:8px; font-size:13px; color:var(--sub);}
+  .stamp{position:absolute; top:10px; right:10px; width:58px; height:58px; border-radius:50%;
+    border:3px solid var(--wrong); color:var(--wrong); display:flex; align-items:center; justify-content:center;
+    font-family:'Jua'; font-size:13px; transform:rotate(-14deg); background:rgba(255,255,255,.7);
+    line-height:1.1; text-align:center;}
+  .teacher-link{display:block; margin:26px auto 0; background:none; color:var(--sub); font-size:14px; text-decoration:underline;}
+
+  /* 공통 */
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .back-btn{background:var(--card); border:2px solid var(--line); border-radius:14px; padding:8px 14px; font-size:16px; color:var(--ink);}
+  .topbar h2{margin:0; font-size:22px; flex:1;}
+  .steps{display:flex; gap:5px; margin-bottom:6px;}
+  .step-dot{flex:1; height:14px; border-radius:8px; background:var(--line); border:none; padding:0; cursor:pointer;}
+  .step-dot.on{background:#FFC79A;}
+  .step-dot.now{background:var(--accent); box-shadow:0 0 0 3px rgba(255,138,61,.25);}
+  .step-caption{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; gap:6px;}
+  .step-name{font-family:'Jua'; font-size:17px; color:var(--ink);}
+  .step-tip{font-size:13px; color:var(--sub);}
+
+  /* 받아쓰기 도움 */
+  .dict-bar{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+  .syl-count{background:#F1F5FA; border:2px solid var(--line); border-radius:999px; padding:7px 15px; font-family:'Jua'; font-size:16px;}
+  .hint-bar{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .hint-label{font-size:14px; color:var(--sub); margin-right:2px;}
+  .panel{background:var(--card); border:2px solid var(--line); border-radius:22px; padding:22px 20px;}
+  .panel h3{margin:0 0 4px; font-size:24px;}
+  .panel .hint{color:var(--sub); font-size:15px; margin:0 0 16px; line-height:1.6;}
+  .btn{background:var(--accent); color:#fff; border-radius:16px; padding:14px 26px; font-size:20px; font-family:'Jua'; box-shadow:0 3px 0 var(--accent-dark);}
+  .btn:active{transform:translateY(2px); box-shadow:none;}
+  .btn.ghost{background:#F1F5FA; color:var(--ink); box-shadow:0 3px 0 var(--line);}
+  .btn.mint{background:var(--mint); box-shadow:0 3px 0 #219478;}
+  .btn.sm{font-size:16px; padding:10px 18px;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center;}
+  .chip{border-radius:999px; padding:8px 16px; font-size:15px; background:#F1F5FA; border:2px solid var(--line); color:var(--ink);}
+  .chip.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .toggle-row{display:flex; gap:8px; align-items:center; margin:8px 0 16px; flex-wrap:wrap;}
+
+  /* 낱말 카드 */
+  .word-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .wcard{background:#F8FAFD; border:2px solid var(--line); border-radius:18px; padding:22px 10px; font-family:'Jua'; font-size:26px; color:var(--ink);}
+  .wcard.read{background:#E9F7F2; border-color:var(--mint);}
+  .wcard:active{transform:scale(.96);}
+
+  /* 읽기 */
+  .sentence{font-size:26px; line-height:1.95; padding:8px 12px; border-radius:14px;}
+  .sentence.active{background:#FFF3E4;}
+  .sentence .num{color:var(--sub); font-size:16px; margin-right:8px;}
+  .sentence .slash{color:var(--accent); font-weight:bold; margin:0 3px;}
+  .listen-btn{background:#F1F5FA; border:2px solid var(--line); border-radius:12px; padding:4px 12px; font-size:16px; margin-left:8px; vertical-align:middle; color:var(--ink);}
+
+  /* 타이머 */
+  .timer{font-family:'Jua'; font-size:54px; text-align:center; margin:8px 0;}
+  .round-row{display:flex; justify-content:center; gap:10px; margin-bottom:10px;}
+  .round-pill{padding:8px 16px; border-radius:999px; background:#F1F5FA; border:2px solid var(--line); font-size:15px; font-family:'Jua';}
+  .round-pill.now{border-color:var(--accent); background:#FFF3E4;}
+  .round-pill.done{background:var(--mint); color:#fff; border-color:var(--mint);}
+  .counter{display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 2px;}
+  .counter button{width:56px; height:56px; border-radius:50%; font-size:28px; background:#F1F5FA; border:2px solid var(--line); color:var(--ink);}
+  .counter .cnum{font-family:'Jua'; font-size:34px; min-width:60px; text-align:center;}
+  .counter-label{text-align:center; color:var(--sub); font-size:15px;}
+
+  /* 퀴즈 */
+  .quiz-q{font-family:'Jua'; font-size:23px; margin:0 0 12px;}
+  .quiz-opts{display:grid; gap:10px;}
+  .opt{text-align:left; background:#F8FAFD; border:2px solid var(--line); border-radius:16px; padding:16px 18px; font-size:20px; color:var(--ink);}
+  .opt.correct{background:#E9F7F2; border-color:var(--mint);}
+  .opt.wrong{background:#FDECEC; border-color:var(--wrong);}
+  .quiz-feedback{font-family:'Jua'; font-size:22px; margin-top:14px; min-height:30px;}
+  .quiz-progress{color:var(--sub); font-size:15px; margin-bottom:6px;}
+
+  /* 쓰기 */
+  .write-title{text-align:center; font-family:'Jua'; font-size:25px; margin-bottom:10px; line-height:1.5;}
+  .canvas-box{border:2px dashed var(--line); border-radius:16px; overflow:hidden; background:#fff; touch-action:none;}
+  canvas{display:block; width:100%;}
+  .word-nav{display:flex; justify-content:center; gap:8px; margin:0 0 12px; flex-wrap:wrap;}
+  .word-pill{padding:6px 13px; border-radius:999px; background:#F1F5FA; border:2px solid var(--line); font-size:16px; color:var(--ink);}
+  .word-pill.done{background:var(--mint); color:#fff; border-color:var(--mint);}
+  .word-pill.now{border-color:var(--accent); background:#FFF3E4;}
+  .answer-box{margin-top:12px; text-align:center; font-family:'Jua'; font-size:26px; color:var(--mint); min-height:34px;}
+
+  /* 완료 */
+  .finish{text-align:center; padding:26px 0;}
+  .big-stamp{width:150px; height:150px; margin:0 auto 16px; border-radius:50%; border:6px solid var(--wrong);
+    color:var(--wrong); display:flex; align-items:center; justify-content:center; font-family:'Jua'; font-size:26px;
+    transform:rotate(-12deg); animation:stampIn .5s cubic-bezier(.2,1.6,.4,1);}
+  @keyframes stampIn{from{transform:scale(2.4) rotate(-12deg); opacity:0;} to{transform:scale(1) rotate(-12deg); opacity:1;}}
+  .stars{font-size:40px; letter-spacing:6px; margin:6px 0 14px; color:var(--star);}
+  .result-list{display:inline-block; text-align:left; font-size:17px; line-height:2; color:var(--sub);}
+
+  /* 교사 기록 */
+  table{width:100%; border-collapse:collapse; font-size:15px;}
+  th,td{padding:10px 6px; border-bottom:1px solid var(--line); text-align:center;}
+  th{color:var(--sub); font-weight:normal;}
+  .notice{background:#FFF7E8; border:2px solid #F5DFAE; color:#8A6D1E; border-radius:14px; padding:12px 14px; font-size:14px; margin-bottom:14px; line-height:1.7;}
+
+  /* 목소리 설정 */
+  .voice-row{display:flex; justify-content:space-between; align-items:center; width:100%;
+    background:#F8FAFD; border:2px solid var(--line); border-radius:16px; padding:15px 18px; margin-bottom:10px; color:var(--ink);}
+  .voice-row.on{background:#E9F7F2; border-color:var(--mint);}
+  .vname{font-family:'Jua'; font-size:19px;}
+  .vpick{font-size:15px; color:var(--sub);}
+  .voice-row.on .vpick{color:var(--mint);}
+  .tag{background:var(--mint); color:#fff; border-radius:8px; padding:2px 8px; font-size:13px; margin-left:6px;}
+  .slider-row{display:flex; align-items:center; gap:12px; font-size:15px; color:var(--sub);}
+  .slider-row input{flex:1; height:34px;}
+
+  /* 로그인 */
+  .nick-input{width:100%; font-family:'Jua'; font-size:26px; text-align:center; padding:14px;
+    border:2px solid var(--line); border-radius:16px; color:var(--ink); background:#F8FAFD;
+    -webkit-user-select:text; user-select:text;}
+  .nick-input:focus{outline:none; border-color:var(--accent); background:#fff;}
+  .mini-link{background:none; color:var(--sub); font-size:13px; text-decoration:underline; margin-left:8px;}
+  .stamp-row{font-size:26px; letter-spacing:4px; margin-top:8px;}
+
+  /* 읽기 조작 바 */
+  .control-bar{background:#F8FAFD; border:2px solid var(--line); border-radius:18px;
+    padding:14px 16px 10px; margin-bottom:18px; display:flex; flex-direction:column; align-items:center; gap:6px;}
+  .control-bar .timer{margin:0; font-size:48px;}
+  .control-bar .counter{margin:6px 0 0;}
+  .control-bar .counter button{width:48px; height:48px; font-size:24px;}
+
+  /* 읽기 결과 그래프 */
+  .bars{margin:10px 0 18px;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .bar-label{font-family:'Jua'; font-size:18px; width:44px;}
+  .bar-track{flex:1; background:#F1F5FA; border-radius:10px; height:32px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--accent); border-radius:10px; transition:width .6s;}
+  .bar-fill.best{background:var(--mint);}
+  .bar-time{font-family:'Jua'; font-size:18px; width:60px; text-align:right;}
+  .result-msg{text-align:center; font-family:'Jua'; font-size:22px; color:var(--ink); margin:6px 0 4px; line-height:1.6;}
+</style>
+
+<style>
+  .step-dot.p1{--pc:#FF8A3D;} .step-dot.p2{--pc:#2FB894;} .step-dot.p3{--pc:#7C6BD6;}
+  .step-dot.on{background:color-mix(in srgb, var(--pc) 45%, white);}
+  .step-dot.now{background:var(--pc); box-shadow:0 0 0 3px color-mix(in srgb, var(--pc) 25%, transparent);}
+  .period-badge{font-family:'Jua'; font-size:14px; color:#fff; border-radius:8px; padding:3px 10px; margin-right:8px;}
+  .period-badge.p1{background:#FF8A3D;} .period-badge.p2{background:#2FB894;} .period-badge.p3{background:#7C6BD6;}
+  .version{text-align:center; color:#B6C2D2; font-size:12px; margin-top:18px;}
+  .sub{font-size:16px; color:var(--sub); font-weight:normal;}
+
+  /* 시각 자료 */
+  .viz-wrap{display:flex; justify-content:center; margin:14px 0 18px;}
+  .viz{max-width:100%; height:auto; max-height:190px;}
+  .concept{background:#F8FAFD; border:2px solid var(--line); border-radius:18px; padding:18px;}
+  .concept-text{font-size:19px; line-height:1.8; margin:0; text-align:center;}
+
+  /* 문제 */
+  .quiz-q{font-family:'Jua'; font-size:24px; margin:4px 0 6px; text-align:center;}
+  .word-q{font-size:21px; line-height:1.9; background:#FFF8EC; border:2px solid #F0DFC0;
+    border-radius:16px; padding:16px 18px; margin:6px 0 14px;}
+  .opt-row{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .opt.big{text-align:center; font-family:'Jua'; font-size:26px; padding:20px 8px;}
+  .calc-q{text-align:center; font-family:'Jua'; font-size:34px; margin:10px 0 6px;}
+  .answer-slot{display:inline-block; min-width:88px; padding:2px 14px; border-bottom:4px solid var(--accent);
+    color:var(--accent-dark);}
+  .hint-line{text-align:center; color:#8A6D1E; background:#FFF7E8; border-radius:12px;
+    padding:8px 12px; font-size:15px; margin:6px auto 0; max-width:420px;}
+
+  /* 키패드 */
+  .keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:340px; margin:16px auto 4px;}
+  .key{background:#fff; border:2px solid var(--line); border-radius:16px; padding:18px 0;
+    font-family:'Jua'; font-size:26px; color:var(--ink); box-shadow:0 3px 0 var(--line);}
+  .key:active{transform:translateY(2px); box-shadow:none;}
+  .key.act{background:#F1F5FA; font-size:22px;}
+  .key.ok{background:var(--mint); color:#fff; border-color:var(--mint); box-shadow:0 3px 0 #219478; font-size:20px;}
+
+  /* 점수 링 */
+  .score-ring{width:132px; height:132px; margin:0 auto 14px; border-radius:50%;
+    border:10px solid var(--mint); display:flex; align-items:center; justify-content:center;
+    font-family:'Jua'; font-size:44px; color:var(--ink); animation:pop .5s cubic-bezier(.2,1.6,.4,1);}
+  .score-ring span{font-size:18px; margin-left:2px; color:var(--sub);}
+  @keyframes pop{from{transform:scale(.3); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .fb-icon{font-size:56px;}
+  .fb-sub{color:var(--sub); font-size:17px; margin:4px 0 12px;}
+  .day-card .stamp{width:auto; padding:0 14px; height:44px; border-radius:22px; font-size:17px; transform:none;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDbuQHBmsb75jW0pAW_KKgaCnKy1LKQ8C8",
+  authDomain: "come-on-1d076.firebaseapp.com",
+  projectId: "come-on-1d076",
+  storageBucket: "come-on-1d076.firebasestorage.app",
+  messagingSenderId: "377043328687",
+  appId: "1:377043328687:web:d1d859945ba76604f43e5a"
+};
+let db=null, cloudOK=false;
+try{ if(firebaseConfig.apiKey){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); cloudOK=true; } }
+catch(e){ console.error("Firebase 초기화 실패", e); }
+const STORAGE_KEY="math-summer-records";
+const NICK_KEY="math-summer-nick";
+
+/* ============================================================
+   6일 수학 복습 (1-1 ~ 2-1)
+   하루 3차시, 차시마다: 개념 → 고르기 → 계산 → 문장제 → 오답 다시풀기
+   gen: 문제 생성 규칙 / concept: 개념 설명 / words: 문장제 템플릿
+============================================================ */
+const MATH_DAYS = [
+{
+  title:"수를 세고 비교해요", from:"1-1 · 1-2 · 2-1",
+  sets:[
+    { title:"9까지의 수",
+      concept:{ text:"하나씩 세면서 마지막에 말한 수가 전체의 개수예요. 1부터 9까지 순서대로 세어 봐요.",
+                visual:{type:"tenframe", n:7} },
+      gen:{ kind:"count9" },
+      words:[
+        {t:"접시에 딸기가 {a}개 있어요. 딸기는 모두 몇 개일까요?", f:(p)=>p.a},
+        {t:"연필 {a}자루와 지우개 {b}개가 있어요. 물건은 모두 몇 개일까요?", f:(p)=>p.a+p.b},
+        {t:"사탕 {a}개 중에서 {b}개를 먹었어요. 남은 사탕은 몇 개일까요?", f:(p)=>p.a-p.b}
+      ] },
+    { title:"50까지의 수",
+      concept:{ text:"10개씩 묶으면 '십'이 돼요. 십 모형 3개와 낱개 4개는 34예요.",
+                visual:{type:"blocks", n:34} },
+      gen:{ kind:"place50" },
+      words:[
+        {t:"공책이 10권씩 {a}묶음과 낱개 {b}권 있어요. 공책은 모두 몇 권일까요?", f:(p)=>p.a*10+p.b},
+        {t:"사탕 {a}개를 10개씩 담으면 몇 묶음이 될까요?", f:(p)=>Math.floor(p.a/10)},
+        {t:"{a}보다 1 큰 수는 얼마일까요?", f:(p)=>p.a+1}
+      ] },
+    { title:"100까지의 수 · 세 자리 수",
+      concept:{ text:"백의 자리, 십의 자리, 일의 자리! 백 모형 2개, 십 모형 4개, 낱개 3개는 243이에요.",
+                visual:{type:"blocks3", n:243} },
+      gen:{ kind:"place3" },
+      words:[
+        {t:"색종이가 100장씩 {a}묶음, 10장씩 {b}묶음, 낱개 {c}장 있어요. 모두 몇 장일까요?", f:(p)=>p.a*100+p.b*10+p.c},
+        {t:"{a}보다 10 큰 수는 얼마일까요?", f:(p)=>p.a+10},
+        {t:"{a}보다 100 큰 수는 얼마일까요?", f:(p)=>p.a+100}
+      ] }
+  ]
+},
+{
+  title:"모으기와 가르기, 한 자리 덧셈과 뺄셈", from:"1-1 덧셈과 뺄셈",
+  sets:[
+    { title:"모으기와 가르기",
+      concept:{ text:"두 수를 합치면 '모으기', 한 수를 둘로 나누면 '가르기'예요. 6은 2와 4로 가를 수 있어요.",
+                visual:{type:"split", n:6, a:2} },
+      gen:{ kind:"split" },
+      words:[
+        {t:"빨간 구슬 {a}개와 파란 구슬 {b}개를 모으면 몇 개일까요?", f:(p)=>p.a+p.b},
+        {t:"사과 {a}개를 두 접시에 나누어 담았어요. 한 접시에 {b}개를 담으면 다른 접시에는 몇 개일까요?", f:(p)=>p.a-p.b},
+        {t:"{a}는 {b}와 몇으로 가를 수 있을까요?", f:(p)=>p.a-p.b}
+      ] },
+    { title:"한 자리 수 덧셈",
+      concept:{ text:"더하기는 '모두 얼마인지' 구하는 거예요. 3 + 4 = 7 처럼 두 수를 합쳐요.",
+                visual:{type:"addpic", a:3, b:4} },
+      gen:{ kind:"add9" },
+      words:[
+        {t:"주차장에 자동차 {a}대가 있었어요. {b}대가 더 왔어요. 자동차는 모두 몇 대일까요?", f:(p)=>p.a+p.b},
+        {t:"어제 책을 {a}쪽 읽고, 오늘 {b}쪽 읽었어요. 모두 몇 쪽 읽었을까요?", f:(p)=>p.a+p.b},
+        {t:"바구니에 귤 {a}개가 있어요. {b}개를 더 넣으면 몇 개가 될까요?", f:(p)=>p.a+p.b}
+      ] },
+    { title:"한 자리 수 뺄셈",
+      concept:{ text:"빼기는 '남은 것이 얼마인지' 구하는 거예요. 8 - 3 = 5 처럼 덜어 내요.",
+                visual:{type:"subpic", a:8, b:3} },
+      gen:{ kind:"sub9" },
+      words:[
+        {t:"새 {a}마리가 앉아 있었어요. {b}마리가 날아갔어요. 남은 새는 몇 마리일까요?", f:(p)=>p.a-p.b},
+        {t:"색연필 {a}자루 중 {b}자루를 친구에게 주었어요. 남은 색연필은 몇 자루일까요?", f:(p)=>p.a-p.b},
+        {t:"{a}는 {b}보다 얼마나 더 클까요?", f:(p)=>p.a-p.b}
+      ] }
+  ]
+},
+{
+  title:"10을 만들고, 받아올림과 받아내림", from:"1-2 덧셈과 뺄셈",
+  sets:[
+    { title:"10을 만들어요",
+      concept:{ text:"두 수를 더해 10이 되는 짝을 외워 두면 계산이 쉬워져요. 7과 3, 6과 4처럼요!",
+                visual:{type:"tenframe", n:7} },
+      gen:{ kind:"make10" },
+      words:[
+        {t:"사탕 {a}개가 있어요. 10개가 되려면 몇 개 더 필요할까요?", f:(p)=>10-p.a},
+        {t:"달걀 한 판에 10개를 담아요. {a}개를 담았다면 몇 개 더 담아야 할까요?", f:(p)=>10-p.a},
+        {t:"10에서 {a}를 빼면 얼마일까요?", f:(p)=>10-p.a}
+      ] },
+    { title:"받아올림이 있는 덧셈",
+      concept:{ text:"더해서 10이 넘으면 10을 먼저 만들어요. 8 + 5 는 8에 2를 주어 10을 만들고, 남은 3을 더해 13!",
+                visual:{type:"bridge", a:8, b:5} },
+      gen:{ kind:"addCarry" },
+      words:[
+        {t:"딱지 {a}장과 {b}장을 합치면 모두 몇 장일까요?", f:(p)=>p.a+p.b},
+        {t:"버스에 {a}명이 타고 있었어요. {b}명이 더 탔어요. 모두 몇 명일까요?", f:(p)=>p.a+p.b},
+        {t:"구슬을 오전에 {a}개, 오후에 {b}개 모았어요. 모두 몇 개일까요?", f:(p)=>p.a+p.b}
+      ] },
+    { title:"받아내림이 있는 뺄셈",
+      concept:{ text:"10에서 먼저 빼요. 13 - 5 는 10에서 5를 빼 5, 거기에 남은 3을 더해 8!",
+                visual:{type:"bridge", a:13, b:5, sub:true} },
+      gen:{ kind:"subBorrow" },
+      words:[
+        {t:"사탕 {a}개 중에서 {b}개를 나누어 주었어요. 남은 사탕은 몇 개일까요?", f:(p)=>p.a-p.b},
+        {t:"주차장에 차가 {a}대 있었는데 {b}대가 나갔어요. 남은 차는 몇 대일까요?", f:(p)=>p.a-p.b},
+        {t:"{a}쪽까지 있는 책을 {b}쪽 읽었어요. 몇 쪽 더 읽어야 할까요?", f:(p)=>p.a-p.b}
+      ] }
+  ]
+},
+{
+  title:"두 자리 수 덧셈과 뺄셈", from:"2-1 세 자리 수 · 덧셈과 뺄셈",
+  sets:[
+    { title:"세 자리 수 알아보기",
+      concept:{ text:"356에서 3은 백의 자리, 5는 십의 자리, 6은 일의 자리예요. 각각 300, 50, 6을 나타내요.",
+                visual:{type:"placechart", n:356} },
+      gen:{ kind:"read3" },
+      words:[
+        {t:"백의 자리 숫자가 {a}, 십의 자리 숫자가 {b}, 일의 자리 숫자가 {c}인 수는 얼마일까요?", f:(p)=>p.a*100+p.b*10+p.c},
+        {t:"{a}에서 십의 자리 숫자가 나타내는 값은 얼마일까요?", f:(p)=>Math.floor(p.a/10)%10*10},
+        {t:"{a}보다 1 작은 수는 얼마일까요?", f:(p)=>p.a-1}
+      ] },
+    { title:"두 자리 수 덧셈 (받아올림)",
+      concept:{ text:"일의 자리부터 더해요. 일의 자리가 10이 넘으면 십의 자리로 1을 올려 줘요.",
+                visual:{type:"vertical", a:27, b:15, op:"+"} },
+      gen:{ kind:"add2" },
+      words:[
+        {t:"우리 반 학생은 {a}명, 옆 반 학생은 {b}명이에요. 두 반은 모두 몇 명일까요?", f:(p)=>p.a+p.b},
+        {t:"어제 줄넘기를 {a}번, 오늘 {b}번 했어요. 모두 몇 번일까요?", f:(p)=>p.a+p.b},
+        {t:"딱지를 {a}장 가지고 있었는데 {b}장을 더 얻었어요. 모두 몇 장일까요?", f:(p)=>p.a+p.b}
+      ] },
+    { title:"두 자리 수 뺄셈 (받아내림)",
+      concept:{ text:"일의 자리끼리 뺄 수 없으면 십의 자리에서 10을 빌려 와요.",
+                visual:{type:"vertical", a:52, b:27, op:"-"} },
+      gen:{ kind:"sub2" },
+      words:[
+        {t:"색종이 {a}장 중 {b}장을 사용했어요. 남은 색종이는 몇 장일까요?", f:(p)=>p.a-p.b},
+        {t:"{a}쪽짜리 책을 {b}쪽까지 읽었어요. 몇 쪽이 남았을까요?", f:(p)=>p.a-p.b},
+        {t:"사탕 {a}개와 젤리 {b}개가 있어요. 사탕은 젤리보다 몇 개 더 많을까요?", f:(p)=>p.a-p.b}
+      ] }
+  ]
+},
+{
+  title:"도형과 길이, 시각", from:"1-1 모양 · 1-2 시각 · 2-1 도형/길이",
+  sets:[
+    { title:"여러 가지 도형",
+      concept:{ text:"삼각형은 변이 3개, 사각형은 변이 4개예요. 원은 변도 꼭짓점도 없어요.",
+                visual:{type:"shapes"} },
+      gen:{ kind:"shape" },
+      words:[
+        {t:"삼각형 {a}개의 변은 모두 몇 개일까요?", f:(p)=>p.a*3},
+        {t:"사각형 {a}개의 꼭짓점은 모두 몇 개일까요?", f:(p)=>p.a*4},
+        {t:"오각형의 변의 수와 삼각형의 변의 수를 더하면 몇일까요?", f:()=>8}
+      ] },
+    { title:"길이 재기",
+      concept:{ text:"자로 잴 때는 0에 맞추고 재요. 1cm가 몇 번 들어가는지 세면 길이를 알 수 있어요.",
+                visual:{type:"ruler", n:7} },
+      gen:{ kind:"length" },
+      words:[
+        {t:"연필의 길이가 {a}cm, 지우개가 {b}cm예요. 둘의 길이를 합하면 몇 cm일까요?", f:(p)=>p.a+p.b},
+        {t:"끈 {a}cm에서 {b}cm를 잘라 냈어요. 남은 끈은 몇 cm일까요?", f:(p)=>p.a-p.b},
+        {t:"{a}cm는 {b}cm보다 몇 cm 더 길까요?", f:(p)=>p.a-p.b}
+      ] },
+    { title:"시각 읽기",
+      concept:{ text:"짧은바늘은 '시', 긴바늘은 '분'을 나타내요. 긴바늘이 6을 가리키면 30분이에요.",
+                visual:{type:"clock", h:3, m:30} },
+      gen:{ kind:"clock" },
+      words:[
+        {t:"{a}시에 출발해서 {b}시간 뒤에 도착했어요. 몇 시에 도착했을까요?", f:(p)=>p.a+p.b},
+        {t:"{a}시 30분에서 30분이 지나면 몇 시일까요?", f:(p)=>p.a+1},
+        {t:"시계의 긴바늘이 한 바퀴 돌면 몇 분이 지날까요?", f:()=>60}
+      ] }
+  ]
+},
+{
+  title:"곱셈과 규칙", from:"2-1 곱셈 · 1-2 규칙 찾기 · 2-1 분류하기",
+  sets:[
+    { title:"곱셈의 뜻",
+      concept:{ text:"같은 수를 여러 번 더하는 것이 곱셈이에요. 3+3+3+3 은 3 × 4 와 같아요.",
+                visual:{type:"groups", rows:4, cols:3} },
+      gen:{ kind:"mulmean" },
+      words:[
+        {t:"한 접시에 사과가 {a}개씩 {b}접시 있어요. 사과는 모두 몇 개일까요?", f:(p)=>p.a*p.b},
+        {t:"{a}씩 {b}묶음은 모두 얼마일까요?", f:(p)=>p.a*p.b},
+        {t:"{a}의 {b}배는 얼마일까요?", f:(p)=>p.a*p.b}
+      ] },
+    { title:"곱셈구구 (2·5단)",
+      concept:{ text:"2단은 2씩 커지고, 5단은 5씩 커져요. 규칙을 알면 쉽게 외울 수 있어요.",
+                visual:{type:"skip", step:5} },
+      gen:{ kind:"mul25" },
+      words:[
+        {t:"자전거 {a}대의 바퀴는 모두 몇 개일까요?", f:(p)=>p.a*2},
+        {t:"한 사람에게 연필을 5자루씩 주려고 해요. {a}명에게 주면 몇 자루가 필요할까요?", f:(p)=>p.a*5},
+        {t:"{a}원짜리 사탕 5개의 값은 얼마일까요?", f:(p)=>p.a*5}
+      ] },
+    { title:"곱셈구구 (3·4단) · 규칙",
+      concept:{ text:"3단은 3씩, 4단은 4씩 커져요. 늘어놓은 수에서 규칙을 찾아 다음 수를 맞혀 봐요.",
+                visual:{type:"skip", step:3} },
+      gen:{ kind:"mul34" },
+      words:[
+        {t:"세발자전거 {a}대의 바퀴는 모두 몇 개일까요?", f:(p)=>p.a*3},
+        {t:"의자 다리가 4개예요. 의자 {a}개의 다리는 모두 몇 개일까요?", f:(p)=>p.a*4},
+        {t:"{a}부터 {b}씩 커지는 규칙일 때, {a} 다음 수는 얼마일까요?", f:(p)=>p.a+p.b}
+      ] }
+  ]
+}
+];
+
+
+/* ============ 시드 고정 난수 (매번 같은 문제) ============ */
+function rnd(seed){ const x=Math.sin(seed*9301+49297)*233280; return x-Math.floor(x); }
+function ri(seed,min,max){ return min+Math.floor(rnd(seed)*(max-min+1)); }
+function shuffleAns(seed, correct, wrongs){
+  const opts=[correct].concat(wrongs);
+  const pos=ri(seed+777,0,opts.length-1);
+  const rest=opts.slice(1);
+  rest.splice(pos,0,correct);
+  return {opts:rest, a:pos};
+}
+
+/* ============ SVG 시각 자료 ============ */
+const SV={
+  tenframe(n){
+    let c="";
+    for(let i=0;i<10;i++){
+      const x=10+(i%5)*54, y=10+Math.floor(i/5)*54;
+      c+=`<rect x="${x}" y="${y}" width="50" height="50" rx="8" fill="#fff" stroke="#D8E2EF" stroke-width="2"/>`;
+      if(i<n) c+=`<circle cx="${x+25}" cy="${y+25}" r="17" fill="#FF8A3D"/>`;
+    }
+    return `<svg viewBox="0 0 290 128" class="viz">${c}</svg>`;
+  },
+  blocks(n){
+    const t=Math.floor(n/10), o=n%10;
+    let c="", x=8;
+    for(let i=0;i<t;i++){ c+=`<rect x="${x}" y="8" width="18" height="100" rx="4" fill="#2FB894" stroke="#219478" stroke-width="2"/>`; x+=24; }
+    x+=10;
+    for(let i=0;i<o;i++){
+      const cx=x+(i%5)*22, cy=8+Math.floor(i/5)*24;
+      c+=`<rect x="${cx}" y="${cy}" width="18" height="18" rx="4" fill="#FF8A3D" stroke="#E9731F" stroke-width="2"/>`;
+    }
+    return `<svg viewBox="0 0 ${Math.max(260,x+120)} 120" class="viz">${c}
+      <text x="8" y="118" font-size="13" fill="#6B7C93">십 모형 ${t}개</text>
+      <text x="${x}" y="118" font-size="13" fill="#6B7C93">낱개 ${o}개</text></svg>`;
+  },
+  blocks3(n){
+    const h=Math.floor(n/100), t=Math.floor(n/10)%10, o=n%10;
+    let c="", x=8;
+    for(let i=0;i<h;i++){ c+=`<rect x="${x}" y="8" width="46" height="46" rx="5" fill="#7C6BD6" stroke="#5F4FC0" stroke-width="2"/>`; x+=52; }
+    x+=8;
+    for(let i=0;i<t;i++){ c+=`<rect x="${x}" y="8" width="12" height="46" rx="3" fill="#2FB894" stroke="#219478" stroke-width="2"/>`; x+=16; }
+    x+=8;
+    for(let i=0;i<o;i++){ const cx=x+(i%5)*16, cy=8+Math.floor(i/5)*16;
+      c+=`<rect x="${cx}" y="${cy}" width="12" height="12" rx="3" fill="#FF8A3D" stroke="#E9731F" stroke-width="2"/>`; }
+    return `<svg viewBox="0 0 ${Math.max(300,x+100)} 80" class="viz">${c}</svg>`;
+  },
+  placechart(n){
+    const h=Math.floor(n/100), t=Math.floor(n/10)%10, o=n%10;
+    const cell=(lab,d,val,color)=>`
+      <rect x="0" y="0" width="96" height="86" rx="12" fill="${color}" opacity=".14"/>
+      <text x="48" y="24" text-anchor="middle" font-size="14" fill="#6B7C93">${lab}</text>
+      <text x="48" y="58" text-anchor="middle" font-size="34" font-family="Jua" fill="#1F3A5F">${d}</text>
+      <text x="48" y="78" text-anchor="middle" font-size="14" fill="${color}">${val}</text>`;
+    return `<svg viewBox="0 0 310 90" class="viz">
+      <g transform="translate(4,2)">${cell("백의 자리",h,h*100,"#7C6BD6")}</g>
+      <g transform="translate(106,2)">${cell("십의 자리",t,t*10,"#2FB894")}</g>
+      <g transform="translate(208,2)">${cell("일의 자리",o,o,"#FF8A3D")}</g></svg>`;
+  },
+  split(n,a){
+    return `<svg viewBox="0 0 260 130" class="viz">
+      <circle cx="130" cy="26" r="24" fill="#FFF3E4" stroke="#FF8A3D" stroke-width="3"/>
+      <text x="130" y="35" text-anchor="middle" font-size="24" font-family="Jua" fill="#1F3A5F">${n}</text>
+      <line x1="118" y1="48" x2="70" y2="82" stroke="#D8E2EF" stroke-width="3"/>
+      <line x1="142" y1="48" x2="190" y2="82" stroke="#D8E2EF" stroke-width="3"/>
+      <circle cx="60" cy="100" r="24" fill="#E9F7F2" stroke="#2FB894" stroke-width="3"/>
+      <text x="60" y="109" text-anchor="middle" font-size="24" font-family="Jua" fill="#1F3A5F">${a}</text>
+      <circle cx="200" cy="100" r="24" fill="#E9F7F2" stroke="#2FB894" stroke-width="3"/>
+      <text x="200" y="109" text-anchor="middle" font-size="24" font-family="Jua" fill="#1F3A5F">${n-a}</text></svg>`;
+  },
+  dots(n,color,x0,y0){
+    let c="";
+    for(let i=0;i<n;i++){ const x=x0+(i%5)*26, y=y0+Math.floor(i/5)*26;
+      c+=`<circle cx="${x}" cy="${y}" r="10" fill="${color}"/>`; }
+    return c;
+  },
+  addpic(a,b){
+    return `<svg viewBox="0 0 300 80" class="viz">
+      ${SV.dots(a,"#FF8A3D",16,26)}
+      <text x="${16+Math.min(a,5)*26+4}" y="34" font-size="26" font-family="Jua" fill="#6B7C93">+</text>
+      ${SV.dots(b,"#2FB894",16+Math.min(a,5)*26+30,26)}</svg>`;
+  },
+  subpic(a,b){
+    let c="";
+    for(let i=0;i<a;i++){ const x=18+(i%6)*30, y=26+Math.floor(i/6)*30;
+      const gone = i>=a-b;
+      c+=`<circle cx="${x}" cy="${y}" r="11" fill="${gone?"#F1F5FA":"#FF8A3D"}" stroke="${gone?"#C9D6E4":"none"}" stroke-width="2"/>`;
+      if(gone) c+=`<line x1="${x-8}" y1="${y-8}" x2="${x+8}" y2="${y+8}" stroke="#E45B5B" stroke-width="3"/>`;
+    }
+    return `<svg viewBox="0 0 210 ${26+Math.ceil(a/6)*30+10}" class="viz">${c}</svg>`;
+  },
+  bridge(a,b,sub){
+    const txt = sub ? `${a} - ${b} = 10 - ${b} + ${a-10}` : `${a} + ${b} : ${a} + ${10-a} = 10, 10 + ${b-(10-a)}`;
+    return `<svg viewBox="0 0 320 70" class="viz">
+      <rect x="6" y="14" width="308" height="42" rx="12" fill="#FFF3E4"/>
+      <text x="160" y="42" text-anchor="middle" font-size="19" font-family="Jua" fill="#E9731F">${txt}</text></svg>`;
+  },
+  vertical(a,b,op){
+    return `<svg viewBox="0 0 150 120" class="viz">
+      <text x="120" y="40" text-anchor="end" font-size="34" font-family="Jua" fill="#1F3A5F">${a}</text>
+      <text x="34" y="80" font-size="30" font-family="Jua" fill="#6B7C93">${op}</text>
+      <text x="120" y="80" text-anchor="end" font-size="34" font-family="Jua" fill="#1F3A5F">${b}</text>
+      <line x1="24" y1="92" x2="126" y2="92" stroke="#1F3A5F" stroke-width="3"/></svg>`;
+  },
+  shapes(){
+    return `<svg viewBox="0 0 300 96" class="viz">
+      <polygon points="46,14 78,74 14,74" fill="#FFF3E4" stroke="#FF8A3D" stroke-width="3"/>
+      <text x="46" y="92" text-anchor="middle" font-size="13" fill="#6B7C93">삼각형</text>
+      <rect x="118" y="20" width="56" height="54" rx="4" fill="#E9F7F2" stroke="#2FB894" stroke-width="3"/>
+      <text x="146" y="92" text-anchor="middle" font-size="13" fill="#6B7C93">사각형</text>
+      <circle cx="250" cy="47" r="29" fill="#EFEBFB" stroke="#7C6BD6" stroke-width="3"/>
+      <text x="250" y="92" text-anchor="middle" font-size="13" fill="#6B7C93">원</text></svg>`;
+  },
+  ruler(n){
+    let ticks="";
+    for(let i=0;i<=10;i++){
+      const x=20+i*26;
+      ticks+=`<line x1="${x}" y1="46" x2="${x}" y2="${i%5===0?26:36}" stroke="#6B7C93" stroke-width="2"/>`;
+      if(i%5===0) ticks+=`<text x="${x}" y="20" text-anchor="middle" font-size="13" fill="#6B7C93">${i}</text>`;
+    }
+    return `<svg viewBox="0 0 300 86" class="viz">
+      <rect x="20" y="46" width="260" height="26" fill="#FFF8EC" stroke="#E3D3B4" stroke-width="2"/>
+      ${ticks}
+      <rect x="20" y="58" width="${n*26}" height="12" rx="6" fill="#FF8A3D"/>
+      <text x="${20+n*26/2}" y="84" text-anchor="middle" font-size="13" fill="#E9731F">${n}cm</text></svg>`;
+  },
+  clock(h,m){
+    const ha=(h%12)*30+m*0.5-90, ma=m*6-90;
+    const pt=(ang,len)=>[70+len*Math.cos(ang*Math.PI/180), 70+len*Math.sin(ang*Math.PI/180)];
+    const [hx,hy]=pt(ha,30), [mx,my]=pt(ma,44);
+    let nums="";
+    for(let i=1;i<=12;i++){
+      const a=(i*30-90)*Math.PI/180;
+      nums+=`<text x="${70+52*Math.cos(a)}" y="${70+52*Math.sin(a)+5}" text-anchor="middle" font-size="13" font-family="Jua" fill="#6B7C93">${i}</text>`;
+    }
+    return `<svg viewBox="0 0 140 140" class="viz">
+      <circle cx="70" cy="70" r="64" fill="#fff" stroke="#1F3A5F" stroke-width="3"/>
+      ${nums}
+      <line x1="70" y1="70" x2="${hx}" y2="${hy}" stroke="#1F3A5F" stroke-width="6" stroke-linecap="round"/>
+      <line x1="70" y1="70" x2="${mx}" y2="${my}" stroke="#FF8A3D" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="70" cy="70" r="5" fill="#1F3A5F"/></svg>`;
+  },
+  groups(rows,cols){
+    let c="";
+    for(let r=0;r<rows;r++){
+      c+=`<rect x="8" y="${8+r*32}" width="${cols*30+10}" height="28" rx="14" fill="#FFF3E4" stroke="#FFC79A" stroke-width="2"/>`;
+      for(let i=0;i<cols;i++) c+=`<circle cx="${26+i*30}" cy="${22+r*32}" r="9" fill="#FF8A3D"/>`;
+    }
+    return `<svg viewBox="0 0 ${cols*30+30} ${rows*32+12}" class="viz">${c}</svg>`;
+  },
+  skip(step){
+    let c="";
+    for(let i=1;i<=6;i++){
+      const x=6+(i-1)*50;
+      c+=`<rect x="${x}" y="14" width="42" height="38" rx="10" fill="#E9F7F2" stroke="#2FB894" stroke-width="2"/>
+        <text x="${x+21}" y="40" text-anchor="middle" font-size="18" font-family="Jua" fill="#1F3A5F">${step*i}</text>`;
+      if(i<6) c+=`<text x="${x+46}" y="40" font-size="13" fill="#6B7C93">+${step}</text>`;
+    }
+    return `<svg viewBox="0 0 306 62" class="viz">${c}</svg>`;
+  }
+};
+function viz(v){
+  if(!v) return "";
+  const f=SV[v.type];
+  if(!f) return "";
+  if(v.type==="tenframe") return f(v.n);
+  if(v.type==="blocks") return f(v.n);
+  if(v.type==="blocks3") return f(v.n);
+  if(v.type==="placechart") return f(v.n);
+  if(v.type==="split") return f(v.n,v.a);
+  if(v.type==="addpic") return f(v.a,v.b);
+  if(v.type==="subpic") return f(v.a,v.b);
+  if(v.type==="bridge") return f(v.a,v.b,v.sub);
+  if(v.type==="vertical") return f(v.a,v.b,v.op);
+  if(v.type==="shapes") return f();
+  if(v.type==="ruler") return f(v.n);
+  if(v.type==="clock") return f(v.h,v.m);
+  if(v.type==="groups") return f(v.rows,v.cols);
+  if(v.type==="skip") return f(v.step);
+  return "";
+}
+
+/* ============ 문제 생성 ============ */
+const _mcache={};
+function mathSet(di,si){
+  const key=di+"-"+si;
+  if(_mcache[key]) return _mcache[key];
+  const set=MATH_DAYS[di].sets[si];
+  const S=(di*100+si*10);
+  const choice=[], calc=[];
+
+  const K=set.gen.kind;
+  for(let i=0;i<6;i++){
+    const s=S+i*7+1;
+    choice.push(makeChoice(K,s));
+  }
+  for(let i=0;i<12;i++){
+    const s=S+i*13+3;
+    calc.push(makeCalc(K,s));
+  }
+  const words=set.words.map((w,i)=>{
+    const s=S+i*29+5;
+    const p=wordParams(K,s);
+    let t=w.t;
+    Object.keys(p).forEach(k=>{ t=t.split("{"+k+"}").join(p[k]); });
+    return { q:t, ans:w.f(p) };
+  });
+  _mcache[key]={choice, calc, words};
+  return _mcache[key];
+}
+
+function makeChoice(K,s){
+  switch(K){
+    case "count9":{
+      const n=ri(s,3,9);
+      const {opts,a}=shuffleAns(s, n, [Math.max(1,n-1), Math.min(9,n+1)]);
+      return {q:"그림의 개수는 모두 몇 개일까요?", visual:{type:"tenframe",n}, opts:opts.map(String), a};
+    }
+    case "place50":{
+      const n=ri(s,11,49);
+      const {opts,a}=shuffleAns(s, n, [n+10>49?n-10:n+10, n%10===0?n+1:n-1]);
+      return {q:"십 모형과 낱개가 나타내는 수는 얼마일까요?", visual:{type:"blocks",n}, opts:opts.map(String), a};
+    }
+    case "place3":{
+      const n=ri(s,120,899);
+      const {opts,a}=shuffleAns(s, n, [n+100, n-10]);
+      return {q:"모형이 나타내는 수는 얼마일까요?", visual:{type:"blocks3",n}, opts:opts.map(String), a};
+    }
+    case "split":{
+      const n=ri(s,5,9), a1=ri(s+1,1,n-1);
+      const {opts,a}=shuffleAns(s, n-a1, [n-a1+1, Math.max(0,n-a1-1)]);
+      return {q:`${n}은 ${a1}과 몇으로 가를 수 있을까요?`, visual:{type:"split",n,a:a1}, opts:opts.map(String), a};
+    }
+    case "add9":{
+      const x=ri(s,1,5), y=ri(s+1,1,4);
+      const {opts,a}=shuffleAns(s, x+y, [x+y+1, Math.max(0,x+y-1)]);
+      return {q:`${x} + ${y} 는 얼마일까요?`, visual:{type:"addpic",a:x,b:y}, opts:opts.map(String), a};
+    }
+    case "sub9":{
+      const x=ri(s,5,9), y=ri(s+1,1,x-1);
+      const {opts,a}=shuffleAns(s, x-y, [x-y+1, Math.max(0,x-y-1)]);
+      return {q:`${x} - ${y} 는 얼마일까요?`, visual:{type:"subpic",a:x,b:y}, opts:opts.map(String), a};
+    }
+    case "make10":{
+      const x=ri(s,3,9);
+      const {opts,a}=shuffleAns(s, 10-x, [10-x+1, Math.max(0,10-x-1)]);
+      return {q:`${x}과(와) 더해서 10이 되는 수는 얼마일까요?`, visual:{type:"tenframe",n:x}, opts:opts.map(String), a};
+    }
+    case "addCarry":{
+      const x=ri(s,6,9), y=ri(s+1,11-x,9);
+      const {opts,a}=shuffleAns(s, x+y, [x+y-10, x+y+1]);
+      return {q:`${x} + ${y} 는 얼마일까요?`, visual:{type:"bridge",a:x,b:y}, opts:opts.map(String), a};
+    }
+    case "subBorrow":{
+      const x=ri(s,11,18), y=ri(s+1,x-9,9);
+      const {opts,a}=shuffleAns(s, x-y, [x-y+1, x-y+10]);
+      return {q:`${x} - ${y} 는 얼마일까요?`, visual:{type:"bridge",a:x,b:y,sub:true}, opts:opts.map(String), a};
+    }
+    case "read3":{
+      let n=ri(s,123,987);
+      if(Math.floor(n/10)%10===0) n+=ri(s+3,1,9)*10;
+      const t=Math.floor(n/10)%10;
+      const {opts,a}=shuffleAns(s, t*10, [t, t*100]);
+      return {q:`${n} 에서 십의 자리 숫자가 나타내는 값은 얼마일까요?`, visual:{type:"placechart",n}, opts:opts.map(String), a};
+    }
+    case "add2":{
+      const x=ri(s,15,48), y=ri(s+1,15,40);
+      const {opts,a}=shuffleAns(s, x+y, [x+y-10, x+y+10]);
+      return {q:`${x} + ${y} 는 얼마일까요?`, visual:{type:"vertical",a:x,b:y,op:"+"}, opts:opts.map(String), a};
+    }
+    case "sub2":{
+      const x=ri(s,41,89), y=ri(s+1,15,39);
+      const {opts,a}=shuffleAns(s, x-y, [x-y+10, x-y+1]);
+      return {q:`${x} - ${y} 는 얼마일까요?`, visual:{type:"vertical",a:x,b:y,op:"-"}, opts:opts.map(String), a};
+    }
+    case "shape":{
+      const kinds=[["삼각형",3],["사각형",4],["오각형",5]];
+      const k=kinds[ri(s,0,2)];
+      const {opts,a}=shuffleAns(s, k[1], [k[1]+1, k[1]-1]);
+      return {q:`${k[0]}의 변은 몇 개일까요?`, visual:{type:"shapes"}, opts:opts.map(String), a};
+    }
+    case "length":{
+      const n=ri(s,3,10);
+      const {opts,a}=shuffleAns(s, n, [n+1, Math.max(1,n-1)]);
+      return {q:"주황색 막대의 길이는 몇 cm일까요?", visual:{type:"ruler",n}, opts:opts.map(String), a};
+    }
+    case "clock":{
+      const h=ri(s,1,12), half=ri(s+1,0,1)===1;
+      const m=half?30:0;
+      const label=(hh,mm)=>hh+"시"+(mm?" "+mm+"분":"");
+      const {opts,a}=shuffleAns(s, label(h,m), [label(h===12?1:h+1,m), label(h,m?0:30)]);
+      return {q:"시계가 나타내는 시각은 몇 시일까요?", visual:{type:"clock",h,m}, opts, a};
+    }
+    case "mulmean":{
+      const r=ri(s,2,5), c=ri(s+1,2,5);
+      const {opts,a}=shuffleAns(s, `${c} × ${r}`, [`${c} + ${r}`, `${c} × ${r+1}`]);
+      return {q:`그림을 곱셈으로 나타내면 어느 것일까요?`, visual:{type:"groups",rows:r,cols:c}, opts, a};
+    }
+    case "mul25":{
+      const base=ri(s,0,1)===0?2:5, k=ri(s+1,2,9);
+      const {opts,a}=shuffleAns(s, base*k, [base*(k+1), base*(k-1)]);
+      return {q:`${base} × ${k} 는 얼마일까요?`, visual:{type:"skip",step:base}, opts:opts.map(String), a};
+    }
+    case "mul34":{
+      const base=ri(s,0,1)===0?3:4, k=ri(s+1,2,9);
+      const {opts,a}=shuffleAns(s, base*k, [base*(k+1), base*(k-1)]);
+      return {q:`${base} × ${k} 는 얼마일까요?`, visual:{type:"skip",step:base}, opts:opts.map(String), a};
+    }
+  }
+  return {q:"?", opts:["1","2","3"], a:0};
+}
+
+function makeCalc(K,s){
+  const E=(q,ans,hint)=>({q, ans:String(ans), hint});
+  switch(K){
+    case "count9": { const n=ri(s,2,9); return E(`${n} 다음 수는?`, n+1, "1씩 커져요"); }
+    case "place50":{ const t=ri(s,1,4), o=ri(s+1,0,9); return E(`10개씩 ${t}묶음과 낱개 ${o}개는?`, t*10+o, "십의 자리와 일의 자리"); }
+    case "place3": { const h=ri(s,1,9),t=ri(s+1,0,9),o=ri(s+2,0,9); return E(`${h}00 + ${t}0 + ${o} =`, h*100+t*10+o, "자릿값을 합쳐요"); }
+    case "split":  { const n=ri(s,5,9), a=ri(s+1,1,n-1); return E(`${n} 은 ${a} 과 ( ? )`, n-a, "가르기"); }
+    case "add9":   { const a=ri(s,1,5), b=ri(s+1,1,4); return E(`${a} + ${b} =`, a+b, "모두 세어 봐요"); }
+    case "sub9":   { const a=ri(s,5,9), b=ri(s+1,1,a-1); return E(`${a} - ${b} =`, a-b, "덜어 내요"); }
+    case "make10": { const a=ri(s,1,9); return E(`${a} + ( ? ) = 10`, 10-a, "10 만들기 짝꿍"); }
+    case "addCarry":{ const a=ri(s,6,9), b=ri(s+1,11-a,9); return E(`${a} + ${b} =`, a+b, "10을 먼저 만들어요"); }
+    case "subBorrow":{ const a=ri(s,11,18), b=ri(s+1,a-9,9); return E(`${a} - ${b} =`, a-b, "10에서 먼저 빼요"); }
+    case "read3":  { const n=ri(s,102,987); return E(`${n} 보다 10 큰 수는?`, n+10, "십의 자리가 1 커져요"); }
+    case "add2":   { const a=ri(s,15,58), b=ri(s+1,15,39); return E(`${a} + ${b} =`, a+b, "일의 자리부터"); }
+    case "sub2":   { const a=ri(s,41,95), b=ri(s+1,15,39); return E(`${a} - ${b} =`, a-b, "십의 자리에서 빌려요"); }
+    case "shape":  { const n=ri(s,2,5); const k=ri(s+1,0,1);
+                     return k? E(`사각형 ${n}개의 변은 모두 몇 개?`, n*4, "4씩 묶음") : E(`삼각형 ${n}개의 변은 모두 몇 개?`, n*3, "3씩 묶음"); }
+    case "length": { const a=ri(s,3,12), b=ri(s+1,1,a-1); const k=ri(s+2,0,1);
+                     return k? E(`${a}cm + ${b}cm = ( ? )cm`, a+b) : E(`${a}cm - ${b}cm = ( ? )cm`, a-b); }
+    case "clock":  { const h=ri(s,1,10), d=ri(s+1,1,2); return E(`${h}시에서 ${d}시간 뒤는 몇 시?`, h+d, "시를 더해요"); }
+    case "mulmean":{ const a=ri(s,2,5), b=ri(s+1,2,5); return E(`${a} 씩 ${b} 묶음 = ${a} × ${b} =`, a*b, "같은 수를 여러 번 더해요"); }
+    case "mul25":  { const base=ri(s,0,1)===0?2:5, k=ri(s+1,2,9); return E(`${base} × ${k} =`, base*k, `${base}씩 커져요`); }
+    case "mul34":  { const base=ri(s,0,1)===0?3:4, k=ri(s+1,2,9); return E(`${base} × ${k} =`, base*k, `${base}씩 커져요`); }
+  }
+  return E("1 + 1 =", 2);
+}
+
+function wordParams(K,s){
+  switch(K){
+    case "count9":  return {a:ri(s,3,9), b:ri(s+1,1,3)};
+    case "place50": return {a:ri(s,2,4), b:ri(s+1,1,9)};
+    case "place3":  return {a:ri(s,1,5), b:ri(s+1,1,9), c:ri(s+2,1,9)};
+    case "split":   return {a:ri(s,6,9), b:ri(s+1,2,4)};
+    case "add9":    return {a:ri(s,2,5), b:ri(s+1,2,4)};
+    case "sub9":    return {a:ri(s,6,9), b:ri(s+1,2,4)};
+    case "make10":  return {a:ri(s,2,8)};
+    case "addCarry":return {a:ri(s,7,9), b:ri(s+1,4,8)};
+    case "subBorrow":return {a:ri(s,12,18), b:ri(s+1,4,9)};
+    case "read3":   return {a:ri(s,123,899), b:ri(s+1,1,9), c:ri(s+2,1,9)};
+    case "add2":    return {a:ri(s,18,49), b:ri(s+1,16,39)};
+    case "sub2":    return {a:ri(s,45,89), b:ri(s+1,16,38)};
+    case "shape":   return {a:ri(s,2,6)};
+    case "length":  return {a:ri(s,8,15), b:ri(s+1,2,7)};
+    case "clock":   return {a:ri(s,1,8), b:ri(s+1,1,3)};
+    case "mulmean": return {a:ri(s,2,6), b:ri(s+1,2,5)};
+    case "mul25":   return {a:ri(s,2,9), b:5};
+    case "mul34":   return {a:ri(s,2,9), b:ri(s+1,2,4)};
+  }
+  return {a:1,b:1,c:1};
+}
+
+
+const APP_VERSION="1.0";
+const CYCLE=[
+  {kind:"concept", label:"개념 알아보기"},
+  {kind:"choice",  label:"골라 보기"},
+  {kind:"calc",    label:"계산 연습"},
+  {kind:"word",    label:"문장제"},
+  {kind:"review",  label:"틀린 문제 다시"}
+];
+const STEP_DEFS=[];
+[0,1,2].forEach(si=>CYCLE.forEach(c=>STEP_DEFS.push({name:c.label, period:si+1, kind:c.kind, si:si})));
+const FINISH_STEP=STEP_DEFS.length;
+function cur(){ return STEP_DEFS[state.step] || {si:0, kind:"concept"}; }
+function curSet(){ return MATH_DAYS[state.day].sets[cur().si]; }
+function curM(){ return mathSet(state.day, cur().si); }
+
+/* ===================== 상태 ===================== */
+const state={
+  records:{}, screen:"home", day:0, step:0,
+  nick: localStorage.getItem(NICK_KEY) || "",
+  syncing:false,
+  choiceIdx:[0,0,0], choiceScore:[0,0,0], choiceAnswered:false,
+  calcIdx:[0,0,0], calcScore:[0,0,0], input:"", calcState:"", showHint:false,
+  wordIdx:[0,0,0], wordScore:[0,0,0], wordState:"",
+  wrong:[[],[],[]], reviewIdx:0, reviewState:"",
+  startedAt:null, elapsed:0, timerId:null
+};
+function resetDayState(){
+  state.step=0;
+  state.choiceIdx=[0,0,0]; state.choiceScore=[0,0,0]; state.choiceAnswered=false;
+  state.calcIdx=[0,0,0]; state.calcScore=[0,0,0]; state.input=""; state.calcState=""; state.showHint=false;
+  state.wordIdx=[0,0,0]; state.wordScore=[0,0,0]; state.wordState="";
+  state.wrong=[[],[],[]]; state.reviewIdx=0; state.reviewState="";
+  state.elapsed=0; state.startedAt=Date.now();
+  clearInterval(state.timerId);
+  state.timerId=setInterval(()=>{ state.elapsed=Math.floor((Date.now()-state.startedAt)/1000); },1000);
+}
+
+/* ===================== 저장 ===================== */
+function lsKey(){ return STORAGE_KEY+":"+(state.nick||"게스트"); }
+function loadLocal(){ try{ const r=localStorage.getItem(lsKey()); state.records=r?JSON.parse(r):{}; }catch(e){ state.records={}; } }
+async function loadRecords(){
+  loadLocal(); render();
+  if(!db||!state.nick) return;
+  state.syncing=true; render();
+  try{
+    const doc=await db.collection("math").doc(state.nick).get();
+    if(doc.exists){
+      state.records=Object.assign({}, state.records, doc.data().days||{});
+      localStorage.setItem(lsKey(), JSON.stringify(state.records));
+    }
+  }catch(e){ console.error(e); }
+  state.syncing=false; render();
+}
+async function saveRecord(rec){
+  state.records[rec.day]=rec;
+  try{ localStorage.setItem(lsKey(), JSON.stringify(state.records)); }catch(e){}
+  if(!db||!state.nick) return;
+  try{ await db.collection("math").doc(state.nick).set({nick:state.nick, updatedAt:new Date().toISOString(), days:state.records},{merge:true}); }
+  catch(e){ console.error(e); }
+}
+async function resetRecords(){
+  if(!confirm("모든 학습 기록을 정말 지울까요?")) return;
+  state.records={}; localStorage.removeItem(lsKey());
+  if(db&&state.nick){ try{ await db.collection("math").doc(state.nick).set({days:{}},{merge:true}); }catch(e){} }
+  render();
+}
+function setNick(n){ state.nick=n.trim(); localStorage.setItem(NICK_KEY,state.nick); state.screen="home"; loadRecords(); }
+function logout(){ state.nick=""; localStorage.removeItem(NICK_KEY); state.records={}; render(); }
+
+/* ===================== 화면 ===================== */
+const app=document.getElementById("app");
+function fmtTime(s){ return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
+function render(){
+  if(!state.nick){ renderLogin(); return; }
+  if(state.screen==="home") renderHome();
+  else if(state.screen==="teacher") renderTeacher();
+  else renderDay();
+}
+function renderLogin(){
+  app.innerHTML=`
+    <div class="home-head" style="margin-top:40px;">
+      <h1>🔢 여름방학 수학 교실</h1>
+      <p>이름을 알려 주면 공부한 기록을 모아 줄게요.</p>
+    </div>
+    <div class="panel" style="max-width:460px;margin:0 auto;">
+      <h3>내 이름(별명)</h3>
+      <p class="hint">기록은 이 이름으로 저장돼요.</p>
+      <input id="nickInput" class="nick-input" placeholder="예) 지훈이" maxlength="12"
+        onkeydown="if(event.key==='Enter')submitNick()">
+      <div class="btn-row"><button class="btn" onclick="submitNick()">시작하기 →</button></div>
+      <p class="hint" style="margin-top:14px;">${cloudOK?"☁️ 기록이 인터넷에 저장돼요.":"💾 이 기기에만 저장돼요."}</p>
+    </div>`;
+  setTimeout(()=>{ const e=document.getElementById("nickInput"); if(e) e.focus(); },200);
+}
+function submitNick(){ const e=document.getElementById("nickInput"); const v=(e.value||"").trim(); if(!v){e.focus();return;} setNick(v); }
+
+function renderHome(){
+  const done=Object.keys(state.records).length;
+  const cards=MATH_DAYS.map((d,i)=>{
+    const r=state.records[i];
+    const titles=d.sets.map(s=>s.title).join(" · ");
+    return `<button class="day-card" onclick="openDay(${i})">
+      <span class="dnum">${i+1}일째</span>
+      <h3>${d.title}</h3>
+      <p>${titles}</p>
+      <div class="meta">${d.from}</div>
+      <div class="meta">3차시 · 각 40분</div>
+      ${r?`<div class="stamp">${r.rate}점</div>`:""}
+    </button>`;
+  }).join("");
+  const stamps=Array.from({length:6},(_,i)=> state.records[i]?"🌟":"⚪").join(" ");
+  app.innerHTML=`
+    <div class="home-head">
+      <h1>🔢 여름방학 수학 교실</h1>
+      <p><b>${state.nick}</b>님, ${done}일 완료했어요!
+        <button class="mini-link" onclick="logout()">이름 바꾸기</button></p>
+      <div class="stamp-row">${stamps}</div>
+      ${state.syncing?'<p style="font-size:14px;">☁️ 기록을 불러오는 중…</p>':""}
+    </div>
+    <div class="day-grid">${cards}</div>
+    <button class="teacher-link" onclick="openTeacher()">📋 선생님 기록 보기</button>
+    <p class="version">버전 ${APP_VERSION}</p>`;
+}
+function openDay(i){ state.screen="day"; state.day=i; resetDayState(); render(); }
+function openTeacher(){ state.screen="teacher"; render(); }
+function goHome(){ clearInterval(state.timerId); state.screen="home"; render(); }
+
+function dayShell(inner){
+  const d=MATH_DAYS[state.day], sd=STEP_DEFS[state.step];
+  const dots=STEP_DEFS.map((x,s)=>{
+    const gap=(s>0&&STEP_DEFS[s-1].period!==x.period)?' style="margin-left:10px"':'';
+    return '<button class="step-dot p'+x.period+' '+(s===state.step?"now":(s<state.step?"on":""))+'"'+gap
+      +' title="'+x.period+'차시 · '+x.name+'" onclick="goStep('+s+')"></button>';
+  }).join("");
+  const prev=state.step>0?'<button class="back-btn" onclick="goStep('+(state.step-1)+')">◀ 이전 단계</button>':"";
+  const cap=sd?'<span class="period-badge p'+sd.period+'">'+sd.period+'차시</span>'
+    +'<span class="step-name">'+((state.step%CYCLE.length)+1)+'/'+CYCLE.length+'. '+sd.name+'</span>':"";
+  app.innerHTML=`
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">← 처음으로</button>
+      <h2>${state.day+1}일째 · ${d.title}</h2>
+      ${prev}
+    </div>
+    <div class="steps">${dots}</div>
+    <div class="step-caption">${cap}<span class="step-tip">동그라미를 눌러 단계 이동</span></div>
+    <div class="panel">${inner}</div>`;
+}
+function goStep(s){
+  if(s<0||s>FINISH_STEP) return;
+  state.step=s; state.choiceAnswered=false; state.calcState=""; state.wordState="";
+  state.reviewState=""; state.input=""; state.showHint=false;
+  render();
+}
+function nextStep(){ goStep(state.step+1); }
+
+function renderDay(){
+  if(state.step>=FINISH_STEP){ renderFinish(); return; }
+  ({concept:renderConcept, choice:renderChoice, calc:renderCalc,
+    word:renderWord, review:renderReview}[cur().kind])();
+}
+
+/* ---------- 개념 알아보기 ---------- */
+function renderConcept(){
+  const set=curSet();
+  dayShell(`
+    <h3>${set.title}</h3>
+    <div class="concept">
+      <p class="concept-text">${set.concept.text}</p>
+      <div class="viz-wrap">${viz(set.concept.visual)}</div>
+    </div>
+    <p class="hint" style="text-align:center;">선생님과 함께 소리 내어 읽어 보세요.</p>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn" onclick="nextStep()">문제 풀러 가기 →</button>
+    </div>`);
+}
+
+/* ---------- 골라 보기 ---------- */
+function renderChoice(){
+  const si=cur().si, list=curM().choice, i=state.choiceIdx[si], q=list[i];
+  const opts=q.opts.map((o,k)=>'<button class="opt big" id="opt'+k+'" onclick="answerChoice('+k+')">'+o+'</button>').join("");
+  dayShell(`
+    <h3>골라 보기 <span class="sub">${i+1}/${list.length} · 맞힌 개수 ${state.choiceScore[si]}</span></h3>
+    <p class="quiz-q">${q.q}</p>
+    <div class="viz-wrap">${viz(q.visual)}</div>
+    <div class="quiz-opts opt-row">${opts}</div>
+    <div class="quiz-feedback" id="fb"></div>
+    <div class="btn-row" id="nx"></div>`);
+}
+function answerChoice(k){
+  if(state.choiceAnswered) return;
+  state.choiceAnswered=true;
+  const si=cur().si, list=curM().choice, i=state.choiceIdx[si], q=list[i];
+  document.getElementById("opt"+q.a).classList.add("correct");
+  const fb=document.getElementById("fb");
+  if(k===q.a){ state.choiceScore[si]++; fb.textContent="⭕ 정답이에요!"; fb.style.color="var(--mint)"; }
+  else{
+    document.getElementById("opt"+k).classList.add("wrong");
+    fb.textContent="❌ 초록색이 정답이에요.";
+    fb.style.color="var(--wrong)";
+    state.wrong[si].push({type:"choice", q:q.q, visual:q.visual, ans:String(q.opts[q.a])});
+  }
+  const last=i===list.length-1;
+  document.getElementById("nx").innerHTML='<button class="btn" onclick="nextChoice()">'+(last?"다음 단계 →":"다음 문제 →")+'</button>';
+}
+function nextChoice(){
+  const si=cur().si, list=curM().choice;
+  state.choiceAnswered=false;
+  if(state.choiceIdx[si]<list.length-1){ state.choiceIdx[si]++; render(); } else nextStep();
+}
+
+/* ---------- 숫자 키패드 ---------- */
+function keypad(onOk){
+  const k=(v,cls)=>'<button class="key '+(cls||"")+'" onclick="press(\''+v+'\')">'+v+'</button>';
+  return `<div class="keypad">
+    ${[1,2,3,4,5,6,7,8,9].map(n=>k(n)).join("")}
+    <button class="key act" onclick="press('del')">⌫</button>
+    ${k(0)}
+    <button class="key ok" onclick="${onOk}">확인</button>
+  </div>`;
+}
+function press(v){
+  if(v==="del") state.input=state.input.slice(0,-1);
+  else if(state.input.length<4) state.input+=v;
+  const el=document.getElementById("answerBox");
+  if(el) el.textContent=state.input||"?";
+}
+
+/* ---------- 계산 연습 ---------- */
+function renderCalc(){
+  const si=cur().si, list=curM().calc, i=state.calcIdx[si], q=list[i];
+  const done=state.calcState==="ok"||state.calcState==="no";
+  dayShell(`
+    <h3>계산 연습 <span class="sub">${i+1}/${list.length} · 맞힌 개수 ${state.calcScore[si]}</span></h3>
+    <div class="calc-q">${q.q} <span class="answer-slot" id="answerBox">${state.input||"?"}</span></div>
+    ${state.showHint&&q.hint?'<p class="hint-line">💡 '+q.hint+'</p>':""}
+    <div class="quiz-feedback" id="fb">${done?(state.calcState==="ok"?"⭕ 정답!":"❌ 정답은 "+q.ans+" 이에요."):""}</div>
+    ${done?"":keypad("checkCalc()")}
+    <div class="btn-row">
+      ${done?'<button class="btn" onclick="nextCalc()">'+(i===list.length-1?"다음 단계 →":"다음 문제 →")+'</button>'
+            :'<button class="btn ghost sm" onclick="toggleHint()">💡 힌트</button>'}
+    </div>`);
+}
+function toggleHint(){ state.showHint=!state.showHint; render(); }
+function checkCalc(){
+  if(!state.input) return;
+  const si=cur().si, list=curM().calc, i=state.calcIdx[si], q=list[i];
+  if(state.input===String(q.ans)){ state.calcScore[si]++; state.calcState="ok"; }
+  else{
+    state.calcState="no";
+    state.wrong[si].push({type:"calc", q:q.q, ans:String(q.ans), hint:q.hint});
+  }
+  render();
+}
+function nextCalc(){
+  const si=cur().si, list=curM().calc;
+  state.input=""; state.calcState=""; state.showHint=false;
+  if(state.calcIdx[si]<list.length-1){ state.calcIdx[si]++; render(); } else nextStep();
+}
+
+/* ---------- 문장제 ---------- */
+function renderWord(){
+  const si=cur().si, list=curM().words, i=state.wordIdx[si], q=list[i];
+  const done=state.wordState==="ok"||state.wordState==="no";
+  dayShell(`
+    <h3>문장제 <span class="sub">${i+1}/${list.length} · 맞힌 개수 ${state.wordScore[si]}</span></h3>
+    <p class="word-q">${q.q}</p>
+    <div class="calc-q">답 <span class="answer-slot" id="answerBox">${state.input||"?"}</span></div>
+    <div class="quiz-feedback" id="fb">${done?(state.wordState==="ok"?"⭕ 정답!":"❌ 정답은 "+q.ans+" 이에요."):""}</div>
+    ${done?"":keypad("checkWord()")}
+    <div class="btn-row">
+      ${done?'<button class="btn" onclick="nextWord()">'+(i===list.length-1?"다음 단계 →":"다음 문제 →")+'</button>':""}
+    </div>`);
+}
+function checkWord(){
+  if(!state.input) return;
+  const si=cur().si, list=curM().words, i=state.wordIdx[si], q=list[i];
+  if(state.input===String(q.ans)){ state.wordScore[si]++; state.wordState="ok"; }
+  else{ state.wordState="no"; state.wrong[si].push({type:"word", q:q.q, ans:String(q.ans)}); }
+  render();
+}
+function nextWord(){
+  const si=cur().si, list=curM().words;
+  state.input=""; state.wordState="";
+  if(state.wordIdx[si]<list.length-1){ state.wordIdx[si]++; render(); } else nextStep();
+}
+
+/* ---------- 틀린 문제 다시 풀기 ---------- */
+function renderReview(){
+  const si=cur().si, list=state.wrong[si];
+  if(!list.length){
+    dayShell(`
+      <div class="finish" style="padding:26px 0;">
+        <div class="fb-icon">🏅</div>
+        <h3 style="font-size:26px;margin-top:8px;">이번 차시는 다 맞혔어요!</h3>
+        <p class="hint">틀린 문제가 하나도 없어요. 정말 잘했어요.</p>
+        <div class="btn-row" style="justify-content:center;">
+          <button class="btn" onclick="nextStep()">${cur().si<2?"다음 차시로 →":"오늘 학습 끝! →"}</button>
+        </div>
+      </div>`);
+    return;
+  }
+  const i=Math.min(state.reviewIdx, list.length-1), q=list[i];
+  const done=state.reviewState==="ok"||state.reviewState==="no";
+  dayShell(`
+    <h3>틀린 문제 다시 <span class="sub">${i+1}/${list.length}</span></h3>
+    <p class="hint">아까 틀린 문제예요. 천천히 다시 풀어 볼까요?</p>
+    <p class="word-q">${q.q}</p>
+    ${q.visual?'<div class="viz-wrap">'+viz(q.visual)+'</div>':""}
+    ${q.hint?'<p class="hint-line">💡 '+q.hint+'</p>':""}
+    <div class="calc-q">답 <span class="answer-slot" id="answerBox">${state.input||"?"}</span></div>
+    <div class="quiz-feedback" id="fb">${done?(state.reviewState==="ok"?"⭕ 이번엔 맞혔어요! 훌륭해요.":"❌ 정답은 "+q.ans+" 이에요. 한 번 더 읽어 봐요."):""}</div>
+    ${done?"":keypad("checkReview()")}
+    <div class="btn-row">
+      ${done?'<button class="btn" onclick="nextReview()">'+(i===list.length-1?(cur().si<2?"다음 차시로 →":"오늘 학습 끝! →"):"다음 문제 →")+'</button>':""}
+    </div>`);
+}
+function checkReview(){
+  if(!state.input) return;
+  const si=cur().si, list=state.wrong[si], i=Math.min(state.reviewIdx,list.length-1);
+  state.reviewState = state.input===String(list[i].ans) ? "ok" : "no";
+  render();
+}
+function nextReview(){
+  const si=cur().si, list=state.wrong[si];
+  state.input=""; state.reviewState="";
+  if(state.reviewIdx<list.length-1){ state.reviewIdx++; render(); }
+  else{ state.reviewIdx=0; nextStep(); }
+}
+
+/* ---------- 완료 ---------- */
+function totals(){
+  const d=MATH_DAYS[state.day];
+  let got=0, all=0;
+  [0,1,2].forEach(si=>{
+    const m=mathSet(state.day,si);
+    got+=state.choiceScore[si]+state.calcScore[si]+state.wordScore[si];
+    all+=m.choice.length+m.calc.length+m.words.length;
+  });
+  return {got, all, rate: all?Math.round(got/all*100):0};
+}
+function completeDay(){
+  const t=totals();
+  clearInterval(state.timerId);
+  saveRecord({ day:state.day, date:new Date().toISOString().slice(0,10),
+    got:t.got, all:t.all, rate:t.rate, sec:state.elapsed,
+    wrongCount:state.wrong.reduce((a,b)=>a+b.length,0) });
+  state.step=FINISH_STEP; render();
+}
+function renderFinish(){
+  const d=MATH_DAYS[state.day], t=totals();
+  if(!state.records[state.day]) completeDay();
+  const msg = t.rate>=90 ? "정말 훌륭해요! 완벽에 가까워요 🎉"
+            : t.rate>=70 ? "잘했어요! 조금만 더 하면 완벽해요 👍"
+            : "끝까지 해낸 게 대단해요. 틀린 문제는 내일 다시 봐요 💪";
+  const lines=[0,1,2].map(si=>{
+    const m=mathSet(state.day,si);
+    const g=state.choiceScore[si]+state.calcScore[si]+state.wordScore[si];
+    const a=m.choice.length+m.calc.length+m.words.length;
+    return `📘 ${si+1}차시 ${d.sets[si].title} : ${g} / ${a}`;
+  }).join("<br>");
+  app.innerHTML=`
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">← 처음으로</button>
+      <h2>${state.day+1}일째 · ${d.title}</h2>
+    </div>
+    <div class="panel"><div class="finish">
+      <div class="score-ring">${t.rate}<span>점</span></div>
+      <h3 style="font-size:26px;">${t.got} / ${t.all} 문제 정답</h3>
+      <p class="fb-sub">${msg}</p>
+      <div class="result-list">${lines}<br>⏱ 걸린 시간 ${fmtTime(state.elapsed)}</div>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn" onclick="goHome()">처음으로 가기</button>
+      </div>
+    </div></div>`;
+}
+
+/* ---------- 선생님 기록 ---------- */
+function renderTeacher(){
+  const rows=Object.values(state.records).sort((a,b)=>a.day-b.day).map(r=>
+    `<tr><td>${r.day+1}일</td><td>${MATH_DAYS[r.day].title}</td><td>${r.date}</td>
+      <td>${r.got}/${r.all}</td><td><b>${r.rate}점</b></td>
+      <td>${r.wrongCount}개</td><td>${fmtTime(r.sec||0)}</td></tr>`).join("");
+  app.innerHTML=`
+    <div class="topbar">
+      <button class="back-btn" onclick="goHome()">← 처음으로</button>
+      <h2>📋 ${state.nick} 수학 기록</h2>
+    </div>
+    <div class="notice">${cloudOK?`☁️ Firestore <b>math / ${state.nick}</b> 문서에 저장돼요.`:"💾 이 기기에만 저장돼요."}</div>
+    <div class="panel">
+      ${rows?`<table><tr><th>일차</th><th>주제</th><th>날짜</th><th>정답</th><th>점수</th><th>오답</th><th>시간</th></tr>${rows}</table>`
+            :'<p class="hint">아직 기록이 없어요.</p>'}
+      <p class="hint" style="margin-top:14px;">💡 오답 개수가 많은 단원은 다음 날 개념 단계부터 다시 보여 주세요.</p>
+      ${rows?'<button class="btn ghost sm" style="margin-top:10px;" onclick="resetRecords()">🗑 기록 초기화</button>':""}
+    </div>`;
+}
+
+render(); loadRecords();
+
+</script>
+</body>
+</html>
